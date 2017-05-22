@@ -151,7 +151,8 @@ void ActivityJumper::jumpBack() {
 
 	if (prevPos == currentPos && !(jumpHistory_.last() == "initial")) {
 		jumpHistory_.pop_back();
-		jumpBack();
+		prevPos = destinationArgMap_[jumpHistory_.last()];
 	}
-	else goToDestination(prevPos);
+
+	goToDestination(prevPos);
 }
