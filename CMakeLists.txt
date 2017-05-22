@@ -6,26 +6,26 @@ find_package(Qt5 CONFIG REQUIRED Core DBus)
 set(SOURCE_FILES
         org.kde.ActivityJumper.xml
 
-        error.hpp
-        AJump.hpp
+        src/error.hpp
+        src/AJump.hpp
         )
 set(SOURCE_FILES
-        error.cpp
-        app.cpp
-        AJump.cpp
+        src/error.cpp
+        src/app.cpp
+        src/AJump.cpp
         )
 
-qt5_generate_dbus_interface(AJump.hpp
+qt5_generate_dbus_interface(src/AJump.hpp
     org.kde.ActivityJumper.xml
     OPTIONS -A
 )
 qt5_add_dbus_adaptor(SOURCE_FILES
     ${CMAKE_CURRENT_BINARY_DIR}/org.kde.ActivityJumper.xml
-    AJump.hpp
+        src/AJump.hpp
     ActivityJumper
 )
 
-qt5_wrap_cpp(ajump_moc AJump.hpp)
+qt5_wrap_cpp(ajump_moc src/AJump.hpp)
 add_executable(ActivityJumper
     ${ajump_moc}
     ${SOURCE_FILES}
