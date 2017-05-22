@@ -12,20 +12,24 @@ ActivityJumper::ActivityJumper(QObject *parent)
 	dbus.registerObject("/ActivityJumper", this);
 	dbus.registerService("org.kde.ActivityJumper");
 
-	loadActivityCodeMap();
+	loadActivityMaps();
 	loadDestinationMap();
 }
 
 ActivityJumper::~ActivityJumper() {}
 
-void ActivityJumper::loadActivityCodeMap() {
-	QDBusInterface *activityListInterface = new QDBusInterface("org.kde.ActivityManager",
-															   "/ActivityManager/Activities",
-															   "org.kde.ActivityManager.Activities",
-															   QDBusConnection::sessionBus(),
-															   this);
+QDBusInterface * ActivityJumper::initItfFromStringL(QStringList interfaceStringList) {
+	QDBusInterface *activityListInterface = new QDBusInterface(
+			interfaceStringList[0], interfaceStringList[1], interfaceStringList[2],
+			QDBusConnection::sessionBus(),
+			this);
+	return activityListInterface;
+}
 
-	QDBusMessage activityListResponse = activityListInterface->call("ListActivities");
+void ActivityJumper::loadActivityMaps() {
+
+	QDBusInterface* activityManInterface = initItfFromStringL(ACTIVITY_MAN_ITF_STRINGL);
+	QDBusMessage activityListResponse = activityManInterface->call("ListActivities");
 
 	if (activityListResponse.type() == QDBusMessage::ReplyMessage) {
 
@@ -33,9 +37,9 @@ void ActivityJumper::loadActivityCodeMap() {
 
 		while (itr.hasNext()) {
 			QString activityCode = itr.next();
-			QString activityName = activityListInterface->call("ActivityName", activityCode).arguments().at(
-					0).toString();
+			QString activityName = activityManInterface->call("ActivityName", activityCode).arguments().at(0).toString();
 			activityCodeMap_.insert(activityName, activityCode);
+			activityNameMap_.insert(activityCode, activityName);
 		}
 
 	} else if (activityListResponse.type() == QDBusMessage::ErrorMessage) {
@@ -57,7 +61,7 @@ void ActivityJumper::loadDestinationMap() {
 		while (!fileStream.atEnd()) {
 			destinationEntry = fileStream.readLine().split(" ");
 
-			if (destinationEntry.count() == (1 + Destination::itemsCt)) {
+			if (destinationEntry.count() == (1 + Position::itemsCt)) {
 
 				QString destinationArgument = destinationEntry.at(0);
 				if (destinationMap_.uniqueKeys().contains(destinationArgument)) {
@@ -65,7 +69,7 @@ void ActivityJumper::loadDestinationMap() {
 					continue;
 				}
 
-				Destination destination;
+				Position destination;
 				if (!activityCodeMap_.keys().contains(destinationEntry.at(1))) {
 					invalidConfigEntry(destinationEntry, "Activity name does not exist.");
 					continue;
@@ -91,8 +95,42 @@ void ActivityJumper::loadDestinationMap() {
 	}
 }
 
+Position ActivityJumper::getCurrentPosition() {
+
+	QDBusInterface* activityManInterface = initItfFromStringL(ACTIVITY_MAN_ITF_STRINGL);
+	QDBusMessage activityListResponse = activityManInterface->call("CurrentActivity");
+
+	QDBusInterface* kwinInterface = initItfFromStringL(KWIN_ITF_STRINGL);
+	QDBusMessage kWinResponse = kwinInterface->call("currentDesktop");
+
+	if (kWinResponse.type() == QDBusMessage::ReplyMessage && activityListResponse.type() == QDBusMessage::ReplyMessage) {
+
+		QString activityName = activityNameMap_[activityListResponse.arguments().at(0).toString()];
+		int desktopNr = kWinResponse.arguments().at(0).toString().toInt();
+
+		Position currentPos;
+		currentPos.activity = activityName;
+		currentPos.desktop = desktopNr;
+		return currentPos;
+
+	} else if (kWinResponse.type() == QDBusMessage::ErrorMessage || activityListResponse.type() == QDBusMessage::ErrorMessage) {
+		qDebug() << __PRETTY_FUNCTION__;
+		qDebug() << activityListResponse.errorName();
+		qDebug() << kWinResponse.errorName();
+	}
+
+	return Position();
+
+}
+
+void ActivityJumper::goToDestination(Position destination) {
+
+}
+
 void ActivityJumper::jumpTo(QString destinArg) {
-	qDebug() << __PRETTY_FUNCTION__ << "recieved" << destinArg;
+	qDebug() << __PRETTY_FUNCTION__ << "received" << destinArg;
+	Position currentPos = getCurrentPosition();
+
 }
 
 void ActivityJumper::jumpBack() {
