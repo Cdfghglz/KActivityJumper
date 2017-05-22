@@ -1,2 +1,6 @@
 u KOM 1
 i KOM 2
+o KOM 3
+m KOM 4
+, KOM 5
+. KOM 6
