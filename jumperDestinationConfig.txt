@@ -1,2 +1,2 @@
-u KOM 0
-i KOM 1
+u KOM 1
+i KOM 2

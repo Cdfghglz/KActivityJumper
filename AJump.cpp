@@ -64,7 +64,7 @@ void ActivityJumper::loadDestinationMap() {
 			if (destinationEntry.count() == (1 + Position::itemsCt)) {
 
 				QString destinationArgument = destinationEntry.at(0);
-				if (destinationMap_.uniqueKeys().contains(destinationArgument)) {
+				if (destinationArgMap_.uniqueKeys().contains(destinationArgument)) {
 					invalidConfigEntry(destinationEntry, "Destination argument not unique.");
 					continue;
 				}
@@ -74,16 +74,16 @@ void ActivityJumper::loadDestinationMap() {
 					invalidConfigEntry(destinationEntry, "Activity name does not exist.");
 					continue;
 				}
-				destination.activity = destinationEntry.at(1);
+				destination.activityName = destinationEntry.at(1);
 
 				QRegExp re("\\d*");
 				if (!re.exactMatch(destinationEntry.at(2))) {
 					invalidConfigEntry(destinationEntry, "Destination desktop not a digit.");
 					continue;
 				}
-				destination.desktop = destinationEntry.at(2).toInt();
+				destination.desktopNr = destinationEntry.at(2).toInt();
 
-				destinationMap_.insert(destinationArgument, destination);
+				destinationArgMap_.insert(destinationArgument, destination);
 			}
 			else {
 				invalidConfigEntry(destinationEntry, "Invalid number of arguments.");
@@ -109,8 +109,8 @@ Position ActivityJumper::getCurrentPosition() {
 		int desktopNr = kWinResponse.arguments().at(0).toString().toInt();
 
 		Position currentPos;
-		currentPos.activity = activityName;
-		currentPos.desktop = desktopNr;
+		currentPos.activityName = activityName;
+		currentPos.desktopNr = desktopNr;
 		return currentPos;
 
 	} else if (kWinResponse.type() == QDBusMessage::ErrorMessage || activityListResponse.type() == QDBusMessage::ErrorMessage) {
@@ -120,19 +120,34 @@ Position ActivityJumper::getCurrentPosition() {
 	}
 
 	return Position();
-
 }
 
 void ActivityJumper::goToDestination(Position destination) {
+	QDBusInterface* activityManInterface = initItfFromStringL(ACTIVITY_MAN_ITF_STRINGL);
+	QDBusInterface* kwinInterface = initItfFromStringL(KWIN_ITF_STRINGL);
 
+	activityManInterface->call("SetCurrentActivity", activityCodeMap_[destination.activityName]);
+	kwinInterface->call("setCurrentDesktop", destination.desktopNr);
 }
 
 void ActivityJumper::jumpTo(QString destinArg) {
-	qDebug() << __PRETTY_FUNCTION__ << "received" << destinArg;
 	Position currentPos = getCurrentPosition();
+	if (!(currentPos == destinationArgMap_[destinArg])) {
+		if (jumpHistory_.empty()) {
+			initialPosition_ = currentPos;
+		}
 
+		goToDestination(destinationArgMap_[destinArg]);
+		jumpHistory_.append(destinArg);
+	}
 }
 
 void ActivityJumper::jumpBack() {
-	qDebug() << __PRETTY_FUNCTION__;
+	Position currentPos = getCurrentPosition();
+
+	Position prevPos;
+	if (jumpHistory_.isEmpty()) prevPos = initialPosition_;
+	else prevPos = destinationArgMap_[jumpHistory_.takeLast()];
+
+	if (!(currentPos == prevPos)) goToDestination(prevPos);
 }

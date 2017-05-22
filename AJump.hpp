@@ -17,8 +17,14 @@ static const QStringList KWIN_ITF_STRINGL = (QStringList()
 struct Position {
 	static const uint itemsCt = 2;
 
-	QString activity;
-	int desktop;
+	QString activityName;
+	int desktopNr;
+	bool operator==(Position pos) {
+		if (this->activityName == pos.activityName
+				&& this->desktopNr == pos.desktopNr)
+			return 1;
+		return 0;
+	}
 };
 
 class ActivityJumper: public QObject
@@ -27,15 +33,14 @@ class ActivityJumper: public QObject
     Q_CLASSINFO("D-Bus Interface", "org.kde.ActivityJumper");
 
 private:
-//	QDBusInterface* activityManagerInterface_;
 	QDBusInterface *initItfFromStringL(QStringList interfaceStringList);
 	QMap<QString, QString> activityCodeMap_;
 	QMap<QString, QString> activityNameMap_;
 	void loadActivityMaps();
-	QMap<QString, Position> destinationMap_;
+	QMap<QString, Position> destinationArgMap_;
 	void loadDestinationMap();
-	QList<QString> jumpHistory_;
-	Position initialPosition;
+	QStringList jumpHistory_;
+	Position initialPosition_;
 	Position getCurrentPosition();
 	void goToDestination(Position destination);
 
