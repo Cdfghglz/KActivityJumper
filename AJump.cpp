@@ -54,6 +54,9 @@ void ActivityJumper::loadDestinationMap() {
 	QString configFileName = "../jumperDestinationConfig.txt";
 	QFile configFile(configFileName);
 
+	destinationArgMap_.insert("initial", getCurrentPosition());
+	jumpHistory_.append("initial");
+
 	if (configFile.open(QIODevice::ReadOnly)) {
 		QTextStream fileStream(&configFile);
 		QStringList destinationEntry;
@@ -133,8 +136,8 @@ void ActivityJumper::goToDestination(Position destination) {
 void ActivityJumper::jumpTo(QString destinArg) {
 	Position currentPos = getCurrentPosition();
 	if (!(currentPos == destinationArgMap_[destinArg])) {
-		if (jumpHistory_.empty()) {
-			initialPosition_ = currentPos;
+		if (jumpHistory_.last() == "initial") {
+			destinationArgMap_["initial"] = currentPos;
 		}
 
 		goToDestination(destinationArgMap_[destinArg]);
@@ -144,10 +147,11 @@ void ActivityJumper::jumpTo(QString destinArg) {
 
 void ActivityJumper::jumpBack() {
 	Position currentPos = getCurrentPosition();
+	Position prevPos = destinationArgMap_[jumpHistory_.last()];
 
-	Position prevPos;
-	if (jumpHistory_.isEmpty()) prevPos = initialPosition_;
-	else prevPos = destinationArgMap_[jumpHistory_.takeLast()];
-
-	if (!(currentPos == prevPos)) goToDestination(prevPos);
+	if (prevPos == currentPos && !(jumpHistory_.last() == "initial")) {
+		jumpHistory_.pop_back();
+		jumpBack();
+	}
+	else goToDestination(prevPos);
 }

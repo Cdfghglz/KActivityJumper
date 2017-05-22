@@ -40,7 +40,6 @@ private:
 	QMap<QString, Position> destinationArgMap_;
 	void loadDestinationMap();
 	QStringList jumpHistory_;
-	Position initialPosition_;
 	Position getCurrentPosition();
 	void goToDestination(Position destination);
 
