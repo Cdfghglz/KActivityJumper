@@ -1,4 +1,5 @@
 #include <QDebug>
+#include <QDir>
 
 #include "AJump.hpp"
 #include <activityjumperadaptor.h>
@@ -51,7 +52,8 @@ void ActivityJumper::loadActivityMaps() {
 
 void ActivityJumper::loadDestinationMap() {
 
-	QString configFileName = "../jumperDestinationConfig.txt";
+	QString configFileName = QDir::homePath() +
+			"/.ActivityJumper/jumperDestinationConfig.config";
 	QFile configFile(configFileName);
 
 	destinationArgMap_.insert("initial", getCurrentPosition());
@@ -94,7 +96,7 @@ void ActivityJumper::loadDestinationMap() {
 		}
 	}
 	else {
-		qDebug() << "Could not open the configuration file.";
+		qDebug() << "Could not open the configuration file " << configFileName;
 	}
 }
 

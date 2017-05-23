@@ -14,19 +14,30 @@ You know the situation when you **focus on a task** in an Activity populated wit
 - Qt5+
 
 ### Configure
-The *jumperDestinationConfig.txt* configuration file has the syntax:  
-**dbus_method_arg &nbsp;&nbsp; activity_name &nbsp;&nbsp; desktop_number**  
-e.g.  
+1. Edit ***jumperDestinationConfig.config***  
+File has the syntax `dbus_method_arg activity_name desktop_number\n`, e.g.:  
 `u KOM 1`  
 `i KOM 2`  
-`...`
+`...`  
+Replace the *KOM* with desired and existing activity name, change the desktop numbers as needed.  
 
+2. Import ***myJumperShortcutExport.khotkeys***  
 A corresponding *myJumperShortcutExport.khotkeys* KDE hotkeys configuration file is included. This should be imported with right klick under *System Settings -> Shortcuts -> Custom Shortcuts*.  
-Make sure to reflect the changes made in *jumperDestinationConfig.txt* on the imported *ActivityJumper* group Custom Shortcuts!  
-**TODO**: work on automating this is in progress
+If needed, customize the shortcuts.
 
-### Install, run
-To install, use `cmake` and `make` to build and run the executable with `./ActivityJumper`
+**NOTE**: Make sure to manually reflect any changes of `dbus_method_arg` in *jumperDestinationConfig.txt* on the imported *ActivityJumper* group of Custom Shortcuts! Work on automating this step is in progress.
+
+### Install
+`mkdir build`  
+`cd build/`  
+`cmake ..`  
+`sudo make install`
 
 ### Use
-The sample configuration files let you jump to any of 6 desktops of activity "KOM" with *'Super + u'*, *'Super + i'*... and then, in reverse order of the jumps, back to the initial position with *'Super + space'*.
+
+Use the imported shortcuts to jump to desired activities desktops and back.
+
+With the default configuration:  
+
+Use *'Super + u'*, *'Super + i'*... to jump to any of the 6 desktops of activity "KOM" and then, in reverse order, back to the initial position with *'Super + space'*.
+

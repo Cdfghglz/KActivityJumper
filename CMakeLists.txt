@@ -40,7 +40,17 @@ target_link_libraries(ActivityJumper
 )
 
 find_package(ECM 1.0.0 REQUIRED NO_MODULE)
-set(CMAKE_MODULE_PATH ${ECM_MODULE_PATH} ${ECM_KDE_MODULE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
+set(CMAKE_MODULE_PATH
+        ${ECM_MODULE_PATH}
+        ${ECM_KDE_MODULE_DIR}
+        ${CMAKE_CURRENT_SOURCE_DIR}/cmake
+        )
 
 include(KDEInstallDirs)
+include(DBusMacros)
+
+# install
+configure_file(config/jumperDestinationConfig.config ~/.ActivityJumper/jumperDestinationConfig.config COPYONLY)
+install (TARGETS ActivityJumper DESTINATION bin)
+dbus_add_activation_service(config/org.kde.ActivityJumper.service.in)
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/org.kde.ActivityJumper.xml DESTINATION "${DBUS_INTERFACES_INSTALL_DIR}")
