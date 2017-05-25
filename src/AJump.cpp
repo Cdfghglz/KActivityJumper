@@ -143,7 +143,9 @@ void ActivityJumper::jumpTo(QString destinArg) {
 		}
 
 		goToDestination(destinationArgMap_[destinArg]);
-		jumpHistory_.append(destinArg);
+		if (jumpHistory_.last() != destinArg) {
+			jumpHistory_.append(destinArg);
+		}
 	}
 }
 
