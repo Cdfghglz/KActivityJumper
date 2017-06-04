@@ -1,4 +1,6 @@
 cmake_minimum_required(VERSION 3.5)
+
+# --------- SERVICE
 project(ActivityJumper)
 
 find_package(Qt5 CONFIG REQUIRED Core DBus)
@@ -54,3 +56,14 @@ configure_file(config/jumperDestinationConfig.config ~/.ActivityJumper/jumperDes
 install (TARGETS ActivityJumper DESTINATION bin)
 dbus_add_activation_service(config/org.kde.ActivityJumper.service.in)
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/org.kde.ActivityJumper.xml DESTINATION "${DBUS_INTERFACES_INSTALL_DIR}")
+
+# --------- PLASMOID
+set(QT_MIN_VERSION "5.4.0")
+set(KF5_MIN_VERSION "5.0.0")
+
+find_package(KF5Plasma)
+
+include(KDECMakeSettings)
+include(KDECompilerSettings)
+
+plasma_install_package(package org.kde.activityJumper)
