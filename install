@@ -1,0 +1,9 @@
+- Qt               >= 5.4.0 
+- KDE Workspace    >= 5.4.0
+- Plasma Framework >= 5.19
+
+# the service
+mkdir build
+cmake ..
+cd build
+make install

@@ -28,10 +28,10 @@ If needed, customize the shortcuts.
 **NOTE**: Make sure to manually reflect any changes of `dbus_method_arg` in *jumperDestinationConfig.txt* on the imported *ActivityJumper* group of Custom Shortcuts! Work on automating this step is in progress.
 
 ### Install
-`mkdir build`  
-`cd build/`  
-`cmake ..`  
-`sudo make install`
+
+Run `sudo ./install`
+
+**NOTE**: if needed, make *install* executable by `sudo chmod 777 insntall`
 
 ### Use
 
