@@ -16,7 +16,6 @@
 */
 
 #include "plasmoidplugin.h"
-#include "../src/AJump.hpp"
 
 #include <QtQml>
 #include <QDebug>
@@ -25,5 +24,24 @@ void PlasmoidPlugin::registerTypes(const char *uri)
 {
     Q_ASSERT(uri == QLatin1String("org.kde.private.activityjumper"));
 
-    qmlRegisterType<ActivityJumper>(uri, 1, 0, "ActivityJumper");
+    qmlRegisterType<DBusInterface>(uri, 1, 0, "ActivityJumper");
+}
+
+QDBusInterface * DBusInterface::initItfFromStringL(QStringList interfaceStringList) {
+	QDBusInterface *activityListInterface = new QDBusInterface(
+			interfaceStringList[0], interfaceStringList[1], interfaceStringList[2],
+			QDBusConnection::sessionBus(),
+			this);
+	return activityListInterface;
+}
+
+int DBusInterface::jumpBack() {
+	QDBusInterface* activityJumperItf = initItfFromStringL(ACTIVITY_JUMPER_ITF_STRING);
+	QDBusMessage response = activityJumperItf->call("jumpBack");
+	if (response.type() != QDBusMessage::ErrorMessage) {
+		return 0;
+	} else {
+		qDebug() << response.errorName();
+		return 1;
+	}
 }

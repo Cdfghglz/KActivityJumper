@@ -32,7 +32,7 @@ Item {
         if (!activityJumperFailedToInitialize) {
             console.log('Initializing activityJumper plugin...')
             try {
-                activityJumperPlugin = Qt.createQmlObject('import org.kde.private.systempanel 1.0 as WW; WW.ActivityJumper {}', activityJumper, 'ActivityJumper')
+                activityJumperPlugin = Qt.createQmlObject('import org.kde.private.activityjumper 1.0 as WW; WW.ActivityJumper {}', activityJumper, 'ActivityJumper')
                 console.log('ActivityJumper plugin initialized successfully!')
             }catch (e) {
                 console.exception('ERROR: ActivityJumper plugin FAILED to initialize -->', e)

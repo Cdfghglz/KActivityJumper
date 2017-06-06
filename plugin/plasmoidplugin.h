@@ -20,17 +20,32 @@
 
 #include <QObject>
 #include <QQmlExtensionPlugin>
+#include <QtDBus/QDBusInterface>
+
+static const QStringList ACTIVITY_JUMPER_ITF_STRING = (QStringList()
+		<< "org.kde.ActivityJumper"
+		<< "/ActivityJumper"
+		<< "org.kde.ActivityJumper");
 
 class QQmlEngine;
 class PlasmoidPlugin : public QQmlExtensionPlugin
 {
     Q_OBJECT
-    Q_PLUGIN_METADATA(IID "org.qt-project.Qt.QQmlExtensionInterface")
-//	Q_PLUGIN_METADATA(IID QQmlExtensionInterface_iid)
+	Q_PLUGIN_METADATA(IID QQmlExtensionInterface_iid)
 
+private:
 
 public:
     void registerTypes(const char *uri);
+};
+
+class DBusInterface : public QObject {
+	Q_OBJECT
+private:
+	QDBusInterface *initItfFromStringL(QStringList interfaceStringList);
+
+public Q_SLOTS:
+	int jumpBack();
 };
 
 #endif // PLASMOIDPLUGIN_H

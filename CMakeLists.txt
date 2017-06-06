@@ -64,10 +64,11 @@ set(KF5_MIN_VERSION "5.0.0")
 find_package(KF5Plasma)
 
 find_package(Qt5 ${REQUIRED_QT_VERSION} CONFIG REQUIRED Quick)
+find_package(KF5 ${KF5_MIN_VERSION} REQUIRED COMPONENTS Plasma)
 
 include(KDECMakeSettings)
 include(KDECompilerSettings)
 
 add_subdirectory(plugin)
 
-plasma_install_package(package org.kde.activityJumper)
+plasma_install_package(package org.kde.activityjumper)

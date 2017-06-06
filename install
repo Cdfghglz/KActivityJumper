@@ -8,6 +8,7 @@ cd build
 cmake -DCMAKE_INSTALL_PREFIX=`kde4-config --prefix` -DCMAKE_BUILD_TYPE=Release -DLIB_INSTALL_DIR=lib -DKDE_INSTALL_USE_QT_SYS_PATHS=ON ..
 # cmake ..
 make install
+cd ..
 
 # the plasmoid package
 plasmoidName=$(kreadconfig5 --file="$PWD/package/metadata.desktop" --group="Desktop Entry" --key="X-KDE-PluginInfo-Name")
@@ -21,3 +22,6 @@ mv $filename ../$filename
 cd ..
 echo "md5: $(md5sum $filename | awk '{ print $1 }')"
 echo "sha256: $(sha256sum $filename | awk '{ print $1 }')"
+
+plasmapkg2 -i package
+
