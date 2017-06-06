@@ -44,7 +44,7 @@ private:
 	void goToDestination(Position destination);
 
 public:
-    ActivityJumper(QObject *parent);
+    ActivityJumper(QObject *parent = Q_NULLPTR);
     virtual ~ActivityJumper();
 
 public slots:

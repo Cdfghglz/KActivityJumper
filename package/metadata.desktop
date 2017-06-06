@@ -1,0 +1,19 @@
+[Desktop Entry]
+Name=ActivityJumper
+Comment=Jump across activities and back.
+
+Type=Service
+Icon=preferences-activities
+X-KDE-ServiceTypes=Plasma/Applet
+
+X-Plasma-API=declarativeappletscript
+X-Plasma-MainScript=ui/main.qml
+
+X-KDE-PluginInfo-Author=Rastislav Marko
+X-KDE-PluginInfo-Email=cdfghglz@gmail.com   
+X-KDE-PluginInfo-Name=tobedetermined
+X-KDE-PluginInfo-Version=1
+X-KDE-PluginInfo-Website=https://github.com/Cdfghglz/KActivityJumper
+X-KDE-PluginInfo-Category=Utilities
+X-KDE-PluginInfo-Depends=
+X-KDE-PluginInfo-License=GPL v2+

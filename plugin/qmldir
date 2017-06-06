@@ -1,0 +1,3 @@
+module org.kde.private.activityjumper
+
+plugin plasmoidplugin

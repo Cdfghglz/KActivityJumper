@@ -1,0 +1,16 @@
+include_directories(${CMAKE_BINARY_DIR})
+include_directories(${CMAKE_SOURCE_DIR}/src)
+
+set(plasmoidplugin_SRCS
+    plasmoidplugin.cpp
+    ../src/AJump.cpp
+    ${ajump_moc}
+    )
+
+add_library(plasmoidplugin SHARED ${plasmoidplugin_SRCS})
+
+target_link_libraries(plasmoidplugin Qt5::Quick KF5::Plasma)
+
+install(TARGETS plasmoidplugin DESTINATION ${QML_INSTALL_DIR}/org/kde/private/activityjumper)
+
+install(FILES qmldir DESTINATION ${QML_INSTALL_DIR}/org/kde/private/activityjumper)

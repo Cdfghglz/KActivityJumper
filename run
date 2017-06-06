@@ -1,0 +1,8 @@
+#!/bin/bash
+# Version 4
+
+# plasmapkg2 -u package
+plasmawindowed $(kreadconfig5 --file="$PWD/package/metadata.desktop" --group="Desktop Entry" --key="X-KDE-PluginInfo-Name")
+
+#killall plasmawindowed
+#plasmawindowed -a package -l bottomedge -f horizontal

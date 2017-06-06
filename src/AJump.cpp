@@ -150,6 +150,7 @@ void ActivityJumper::jumpTo(QString destinArg) {
 }
 
 void ActivityJumper::jumpBack() {
+	qDebug() << 'I am jumping back!!!!!!!!!!!!!!!!!!1';
 	Position currentPos = getCurrentPosition();
 	Position prevPos = destinationArgMap_[jumpHistory_.last()];
 
