@@ -38,9 +38,18 @@ QDBusInterface * DBusInterface::initItfFromStringL(QStringList interfaceStringLi
 int DBusInterface::jumpBack() {
 	QDBusInterface* activityJumperItf = initItfFromStringL(ACTIVITY_JUMPER_ITF_STRING);
 	QDBusMessage response = activityJumperItf->call("jumpBack");
-	if (response.type() != QDBusMessage::ErrorMessage) {
-		return 0;
-	} else {
+	if (response.type() != QDBusMessage::ErrorMessage) return 0;
+	else {
+		qDebug() << response.errorName();
+		return 1;
+	}
+}
+
+int DBusInterface::changePinStatus() {
+	QDBusInterface* activityJumperItf = initItfFromStringL(ACTIVITY_JUMPER_ITF_STRING);
+	QDBusMessage response = activityJumperItf->call("changePinStatus");
+	if (response.type() != QDBusMessage::ErrorMessage) return 0;
+	else {
 		qDebug() << response.errorName();
 		return 1;
 	}

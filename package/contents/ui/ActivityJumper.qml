@@ -44,16 +44,25 @@ Item {
     }
     
     function jumpBack() {
-        
         var plugin = getActivityJumperPlugin()
         if (plugin) {
             var result = plugin.jumpBack()
             if(result !=0){
                 console.error("plugin.jumpBack() returned error code=", result)
             }
-            
         } else {
             console.exception('ERROR: Jump back - ActivityJumper plugin not available')
+        }
+    }
+    function changePinStatus() {
+        var plugin = getActivityJumperPlugin()
+        if (plugin) {
+            var result = plugin.changePinStatus()
+            if(result !=0){
+                console.error("plugin.changePinStatus() returned error code=", result)
+            }
+        } else {
+            console.exception('ERROR: Change pin status - ActivityJumper plugin not available')
         }
     }
 }

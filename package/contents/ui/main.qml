@@ -115,8 +115,8 @@ Item {
                 hoverEnabled: true
                 anchors.fill: parent
 
-                onClicked: action_openTaskManager
-                
+                onClicked: activityJumper.jumpBack()
+
                 PlasmaCore.ToolTipArea {
                     anchors.fill: parent
                     mainText: "Jump back"
@@ -136,11 +136,10 @@ Item {
             MouseArea {
                 id: mouseAreaTwo
                 hoverEnabled: true
-                onClicked: {
-                    activityJumper.jumpBack()
-                    plasmoid.setAction("openTaskManager", i18n("Pin current activity"), "utilities-system-monitor");
-                }
                 anchors.fill: parent
+
+                onClicked: activityJumper.changePinStatus()
+
                 PlasmaCore.ToolTipArea {
                     anchors.fill: parent
                     mainText: "Pin the position"

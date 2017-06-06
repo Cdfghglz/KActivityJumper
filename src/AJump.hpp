@@ -50,6 +50,7 @@ public:
 public slots:
     void jumpTo(QString destinArg);
 	void jumpBack();
+	void changePinStatus();
 
 };
 

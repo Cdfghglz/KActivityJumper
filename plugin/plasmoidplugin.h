@@ -33,8 +33,6 @@ class PlasmoidPlugin : public QQmlExtensionPlugin
     Q_OBJECT
 	Q_PLUGIN_METADATA(IID QQmlExtensionInterface_iid)
 
-private:
-
 public:
     void registerTypes(const char *uri);
 };
@@ -46,6 +44,7 @@ private:
 
 public Q_SLOTS:
 	int jumpBack();
+	int changePinStatus();
 };
 
 #endif // PLASMOIDPLUGIN_H

@@ -160,3 +160,7 @@ void ActivityJumper::jumpBack() {
 
 	goToDestination(prevPos);
 }
+
+void ActivityJumper::changePinStatus() {
+	qDebug() << "The pin status changed.";
+}
