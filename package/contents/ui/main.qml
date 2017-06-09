@@ -104,7 +104,7 @@ Item {
         
         PlasmaCore.IconItem {
             id: iconOne
-            source: "/home/cdfghglz/WS/KDE/plasma-applet-activity-jumper/back_ico_w.svg"
+            source: 'ajumper-back'
             visible: true
             
             width: gridItem.iconSize
@@ -127,7 +127,7 @@ Item {
         
         PlasmaCore.IconItem {
             id: iconTwo
-            source: "/home/cdfghglz/WS/KDE/plasma-applet-activity-jumper/pin_ico_w.svg"
+            source: 'ajumper-pin'
             visible: true
             
             width: gridItem.iconSize

@@ -3,7 +3,7 @@ Name=ActivityJumper
 Comment=Jump across activities and back.
 
 Type=Service
-Icon=preferences-activities
+Icon=ajumper-back
 X-KDE-ServiceTypes=Plasma/Applet
 
 X-Plasma-API=declarativeappletscript

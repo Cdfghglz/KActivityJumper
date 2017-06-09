@@ -72,3 +72,6 @@ include(KDECompilerSettings)
 add_subdirectory(plugin)
 
 plasma_install_package(package org.kde.activityjumper)
+
+install(DIRECTORY package/icons/breeze package/icons/breeze-dark DESTINATION ${ICON_INSTALL_DIR})
+message(STATUS ${ICON_INSTALL_DIR})
