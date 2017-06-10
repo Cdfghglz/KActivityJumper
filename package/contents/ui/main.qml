@@ -103,6 +103,7 @@ Item {
         // sizes
         
         PlasmaCore.IconItem {
+            property int state
             id: iconOne
             source: 'ajumper-back'
             visible: true
@@ -127,7 +128,7 @@ Item {
         
         PlasmaCore.IconItem {
             id: iconTwo
-            source: 'ajumper-pin'
+            source: 'ajumper-unpin'
             visible: true
             
             width: gridItem.iconSize
@@ -138,7 +139,10 @@ Item {
                 hoverEnabled: true
                 anchors.fill: parent
 
-                onClicked: activityJumper.changePinStatus()
+                onClicked: {
+                    activityJumper.changePinStatus()
+                    iconTwo.source = 'ajumper-pin'
+                }
 
                 PlasmaCore.ToolTipArea {
                     anchors.fill: parent
