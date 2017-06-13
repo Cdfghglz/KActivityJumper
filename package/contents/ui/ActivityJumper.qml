@@ -18,11 +18,11 @@
 import QtQuick 2.2
 
 Item {
-    id: activityJumper
+    id: activityJumperObj
 
     property var activityJumperPlugin: null
     property bool activityJumperFailedToInitialize: false
-    
+
     function getActivityJumperPlugin() {
         
         if (activityJumperPlugin !== null) {
@@ -54,16 +54,30 @@ Item {
             console.exception('ERROR: Jump back - ActivityJumper plugin not available')
         }
     }
-    function changePinStatus() {
+
+    function changePinState() {
         var plugin = getActivityJumperPlugin()
         if (plugin) {
-            var result = plugin.changePinStatus()
-            if(result !=0){
-                console.error("plugin.changePinStatus() returned error code=", result)
+            var result = plugin.changePinState()
+            if(result == -1){
+                console.error("plugin.changePinState() returned error code=", result)
             }
         } else {
             console.exception('ERROR: Change pin status - ActivityJumper plugin not available')
         }
     }
+
+    function getPinState() {
+        var plugin = getActivityJumperPlugin()
+        if (plugin) {
+            var result = plugin.getPinState()
+            if(result != -1){
+                console.error("plugin.getPinState() returned error code=", result)
+            }
+        } else {
+            console.exception('ERROR: Get pin status - ActivityJumper plugin not available')
+        }
+    }
+
 }
  

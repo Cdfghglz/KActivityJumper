@@ -27,6 +27,13 @@ struct Position {
 	}
 };
 
+enum PIN_STATE {
+	unpinned,
+	pinned,
+	pinnedLocked,
+	pinnedKey
+};
+
 class ActivityJumper: public QObject
 {
     Q_OBJECT;
@@ -44,13 +51,15 @@ private:
 	void goToDestination(Position destination);
 
 public:
+	static int currentPinState;
     ActivityJumper(QObject *parent = Q_NULLPTR);
     virtual ~ActivityJumper();
 
 public slots:
     void jumpTo(QString destinArg);
 	void jumpBack();
-	void changePinStatus();
+	void changePinState();
+	int getPinState();
 
 };
 

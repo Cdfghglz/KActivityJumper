@@ -23,8 +23,7 @@ import org.kde.plasma.plasmoid 2.0
 import org.kde.plasma.core 2.0 as PlasmaCore
 import org.kde.plasma.components 2.0
 
-//import ActivityJumper 1.0
-
+import org.kde.private.activityjumper 1.0
 
 // import "../code/utils.js" as Utils
 
@@ -80,12 +79,26 @@ Item {
         exec("ksysguard");
     }
 
-    Component.onCompleted: {
-        plasmoid.setAction("openTaskManager", i18n("Pin current activity"), "utilities-system-monitor");
-    }
     ActivityJumper {
         id: activityJumper
+        onSignalDesktopChanged: {
+            updatePinIcon()
+        }
     }
+
+    function updatePinIcon() {
+        iconTwo.source = 'ajumper-unpin'
+
+        var cs = 0
+        cs = activityJumper.getPinState()
+        if (cs == 0) {
+            iconTwo.source = 'ajumper-pin'
+        }
+        else if (cs == 1) {
+            iconTwo.source = 'ajumper-pin-locked'
+        }
+    }
+
 // components
     Grid {
         
@@ -134,13 +147,16 @@ Item {
             width: gridItem.iconSize
             height: gridItem.iconSize
 
+
+
             MouseArea {
                 id: mouseAreaTwo
                 hoverEnabled: true
                 anchors.fill: parent
 
                 onClicked: {
-                    activityJumper.changePinStatus()
+                    activityJumper.changePinState()
+                    main.updatePinIcon()
                     iconTwo.source = 'ajumper-pin'
                 }
 

@@ -37,14 +37,26 @@ public:
     void registerTypes(const char *uri);
 };
 
-class DBusInterface : public QObject {
+class ActivityJumperItf: public QObject {
 	Q_OBJECT
 private:
 	QDBusInterface *initItfFromStringL(QStringList interfaceStringList);
 
+public:
+	ActivityJumperItf(QObject *parent = 0);
+	~ActivityJumperItf();
+//	Q_PROPERTY(int pinStatus READ pinStatus NOTIFY signalDesktopChanged REVISION 1)
+
+signals:
+//	Q_SIGNAL void signalDesktopChanged();
+	void signalDesktopChanged();
+
 public Q_SLOTS:
 	int jumpBack();
-	int changePinStatus();
+	int changePinState();
+	int getPinState();
+
+	void desktopChanged();
 };
 
 #endif // PLASMOIDPLUGIN_H

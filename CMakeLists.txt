@@ -11,7 +11,8 @@ set(SOURCE_FILES
         src/error.hpp
         src/AJump.hpp
         )
-set(SOURCE_FILES
+
+set(SOURCE_FILES ${SOURCE_FILES}
         src/error.cpp
         src/app.cpp
         src/AJump.cpp
@@ -23,7 +24,7 @@ qt5_generate_dbus_interface(src/AJump.hpp
 )
 qt5_add_dbus_adaptor(SOURCE_FILES
     ${CMAKE_CURRENT_BINARY_DIR}/org.kde.ActivityJumper.xml
-        src/AJump.hpp
+    src/AJump.hpp
     ActivityJumper
 )
 
@@ -53,7 +54,7 @@ include(DBusMacros)
 
 # install
 configure_file(config/jumperDestinationConfig.config ~/.ActivityJumper/jumperDestinationConfig.config COPYONLY)
-install (TARGETS ActivityJumper DESTINATION bin)
+install (TARGETS ActivityJumper DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
 dbus_add_activation_service(config/org.kde.ActivityJumper.service.in)
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/org.kde.ActivityJumper.xml DESTINATION "${DBUS_INTERFACES_INSTALL_DIR}")
 
@@ -73,5 +74,4 @@ add_subdirectory(plugin)
 
 plasma_install_package(package org.kde.activityjumper)
 
-install(DIRECTORY package/icons/breeze package/icons/breeze-dark DESTINATION ${ICON_INSTALL_DIR})
-message(STATUS ${ICON_INSTALL_DIR})
+install(DIRECTORY package/icons/breeze DESTINATION ${ICON_INSTALL_DIR})

@@ -1,5 +1,8 @@
 
+
+
 find_package(Qt5 CONFIG REQUIRED Core DBus)
+find_package(KF5WindowSystem)
 
 set(plasmoidplugin_SRCS
     plasmoidplugin.cpp
@@ -7,7 +10,12 @@ set(plasmoidplugin_SRCS
 
 add_library(plasmoidplugin SHARED ${plasmoidplugin_SRCS})
 
-target_link_libraries(plasmoidplugin Qt5::Quick KF5::Plasma)
+target_link_libraries(plasmoidplugin
+        Qt5::Quick
+        KF5::Plasma
+        KF5::WindowSystem
+        )
+
 target_link_libraries(plasmoidplugin
     Qt5::DBus
 )

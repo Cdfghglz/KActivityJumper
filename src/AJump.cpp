@@ -161,6 +161,19 @@ void ActivityJumper::jumpBack() {
 	goToDestination(prevPos);
 }
 
-void ActivityJumper::changePinStatus() {
-	qDebug() << "The pin status changed.";
+int ActivityJumper::currentPinState = 0;
+
+void ActivityJumper::changePinState() {
+	//todo: implement the logic
+	if (currentPinState == PIN_STATE::unpinned) {
+		currentPinState = PIN_STATE::pinned;
+	} else {
+		currentPinState = PIN_STATE::unpinned;
+	}
+	qDebug() << "The pin status changed to " << currentPinState << ".";
+
+}
+
+int ActivityJumper::getPinState() {
+	return currentPinState;
 }

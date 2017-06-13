@@ -19,15 +19,24 @@
 
 #include <QtQml>
 #include <QDebug>
+#include <kwindowsystem.h>
+
 
 void PlasmoidPlugin::registerTypes(const char *uri)
 {
     Q_ASSERT(uri == QLatin1String("org.kde.private.activityjumper"));
 
-    qmlRegisterType<DBusInterface>(uri, 1, 0, "ActivityJumper");
+    qmlRegisterType<ActivityJumperItf>(uri, 1, 0, "ActivityJumper");
+
 }
 
-QDBusInterface * DBusInterface::initItfFromStringL(QStringList interfaceStringList) {
+ActivityJumperItf::ActivityJumperItf(QObject *parent) : QObject(parent) {
+	connect(KWindowSystem::self(), &KWindowSystem::currentDesktopChanged, this, &ActivityJumperItf::desktopChanged);
+}
+ActivityJumperItf::~ActivityJumperItf() {
+}
+
+QDBusInterface * ActivityJumperItf::initItfFromStringL(QStringList interfaceStringList) {
 	QDBusInterface *activityListInterface = new QDBusInterface(
 			interfaceStringList[0], interfaceStringList[1], interfaceStringList[2],
 			QDBusConnection::sessionBus(),
@@ -35,22 +44,38 @@ QDBusInterface * DBusInterface::initItfFromStringL(QStringList interfaceStringLi
 	return activityListInterface;
 }
 
-int DBusInterface::jumpBack() {
+int ActivityJumperItf::jumpBack() {
 	QDBusInterface* activityJumperItf = initItfFromStringL(ACTIVITY_JUMPER_ITF_STRING);
 	QDBusMessage response = activityJumperItf->call("jumpBack");
 	if (response.type() != QDBusMessage::ErrorMessage) return 0;
 	else {
-		qDebug() << response.errorName();
+		qDebug() << "jumpBack: " << response.errorName();
 		return 1;
 	}
 }
 
-int DBusInterface::changePinStatus() {
+int ActivityJumperItf::changePinState() {
 	QDBusInterface* activityJumperItf = initItfFromStringL(ACTIVITY_JUMPER_ITF_STRING);
-	QDBusMessage response = activityJumperItf->call("changePinStatus");
+	QDBusMessage response = activityJumperItf->call("changePinState");
 	if (response.type() != QDBusMessage::ErrorMessage) return 0;
 	else {
-		qDebug() << response.errorName();
+		qDebug() << "changePinState: " << response.errorName();
 		return 1;
 	}
+}
+
+int ActivityJumperItf::getPinState() {
+	QDBusInterface *activityJumperItf = initItfFromStringL(ACTIVITY_JUMPER_ITF_STRING);
+	QDBusMessage response = activityJumperItf->call("getPinState");
+	if (response.type() != QDBusMessage::ErrorMessage) return response.arguments().at(0).toInt();
+	else {
+		qDebug() << "getPinState" << response.errorName();
+		return 1;
+	}
+}
+
+void ActivityJumperItf::desktopChanged() {
+	//todo: load the pin status from Activity Jumper and store to a member, then implement the "refresh in qml" with onSignalDesktopChanged: { case ActivityJumper.currentPinState bla.source = ...;
+
+	emit signalDesktopChanged();
 }
