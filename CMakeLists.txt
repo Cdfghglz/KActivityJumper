@@ -10,7 +10,7 @@ set(SOURCE_FILES
 
         src/error.hpp
         src/AJump.hpp
-        )
+        src/common.h)
 
 set(SOURCE_FILES ${SOURCE_FILES}
         src/error.cpp

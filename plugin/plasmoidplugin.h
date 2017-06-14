@@ -22,6 +22,8 @@
 #include <QQmlExtensionPlugin>
 #include <QtDBus/QDBusInterface>
 
+#include "../src/common.h"
+
 static const QStringList ACTIVITY_JUMPER_ITF_STRING = (QStringList()
 		<< "org.kde.ActivityJumper"
 		<< "/ActivityJumper"
@@ -38,18 +40,25 @@ public:
 };
 
 class ActivityJumperItf: public QObject {
-	Q_OBJECT
+	Q_OBJECT;
+	Q_PROPERTY(QString iconSource READ iconSource WRITE setIconSource NOTIFY iconSourceChanged);
 private:
 	QDBusInterface *initItfFromStringL(QStringList interfaceStringList);
+	QString iconSource_;
 
 public:
 	ActivityJumperItf(QObject *parent = 0);
 	~ActivityJumperItf();
-//	Q_PROPERTY(int pinStatus READ pinStatus NOTIFY signalDesktopChanged REVISION 1)
+
+	QString iconSource() const {
+		return iconSource_;
+	}
+	void setIconSource(const QString &sourceStr) {
+		iconSource_ = sourceStr;
+	}
 
 signals:
-//	Q_SIGNAL void signalDesktopChanged();
-	void signalDesktopChanged();
+	void iconSourceChanged();
 
 public Q_SLOTS:
 	int jumpBack();

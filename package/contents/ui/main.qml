@@ -81,22 +81,13 @@ Item {
 
     ActivityJumper {
         id: activityJumper
-        onSignalDesktopChanged: {
+        onIconSourceChanged: {
             updatePinIcon()
         }
     }
 
     function updatePinIcon() {
-        iconTwo.source = 'ajumper-unpin'
-
-        var cs = 0
-        cs = activityJumper.getPinState()
-        if (cs == 0) {
-            iconTwo.source = 'ajumper-pin'
-        }
-        else if (cs == 1) {
-            iconTwo.source = 'ajumper-pin-locked'
-        }
+        iconTwo.source = activityJumper.iconSource
     }
 
 // components
@@ -156,8 +147,7 @@ Item {
 
                 onClicked: {
                     activityJumper.changePinState()
-                    main.updatePinIcon()
-                    iconTwo.source = 'ajumper-pin'
+                    activityJumper.getPinState()
                 }
 
                 PlasmaCore.ToolTipArea {

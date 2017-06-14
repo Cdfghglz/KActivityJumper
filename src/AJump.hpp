@@ -5,6 +5,8 @@
 #include <QMap>
 #include <QtDBus/QDBusInterface>
 
+#include "common.h"
+
 static const QStringList ACTIVITY_MAN_ITF_STRINGL = (QStringList()
 		<< "org.kde.ActivityManager"
 		<< "/ActivityManager/Activities"
@@ -27,12 +29,6 @@ struct Position {
 	}
 };
 
-enum PIN_STATE {
-	unpinned,
-	pinned,
-	pinnedLocked,
-	pinnedKey
-};
 
 class ActivityJumper: public QObject
 {
@@ -51,7 +47,7 @@ private:
 	void goToDestination(Position destination);
 
 public:
-	static int currentPinState;
+	static pinState currentPinState_;
     ActivityJumper(QObject *parent = Q_NULLPTR);
     virtual ~ActivityJumper();
 

@@ -6,7 +6,7 @@ find_package(KF5WindowSystem)
 
 set(plasmoidplugin_SRCS
     plasmoidplugin.cpp
-    )
+        ../src/common.h)
 
 add_library(plasmoidplugin SHARED ${plasmoidplugin_SRCS})
 

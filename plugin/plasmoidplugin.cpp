@@ -21,7 +21,6 @@
 #include <QDebug>
 #include <kwindowsystem.h>
 
-
 void PlasmoidPlugin::registerTypes(const char *uri)
 {
     Q_ASSERT(uri == QLatin1String("org.kde.private.activityjumper"));
@@ -57,7 +56,9 @@ int ActivityJumperItf::jumpBack() {
 int ActivityJumperItf::changePinState() {
 	QDBusInterface* activityJumperItf = initItfFromStringL(ACTIVITY_JUMPER_ITF_STRING);
 	QDBusMessage response = activityJumperItf->call("changePinState");
-	if (response.type() != QDBusMessage::ErrorMessage) return 0;
+	if (response.type() != QDBusMessage::ErrorMessage) {
+		return 0;
+	}
 	else {
 		qDebug() << "changePinState: " << response.errorName();
 		return 1;
@@ -67,15 +68,34 @@ int ActivityJumperItf::changePinState() {
 int ActivityJumperItf::getPinState() {
 	QDBusInterface *activityJumperItf = initItfFromStringL(ACTIVITY_JUMPER_ITF_STRING);
 	QDBusMessage response = activityJumperItf->call("getPinState");
-	if (response.type() != QDBusMessage::ErrorMessage) return response.arguments().at(0).toInt();
+	if (response.type() != QDBusMessage::ErrorMessage){
+
+		pinState currentPinState = static_cast<pinState>(response.arguments().at(0).toInt());
+
+		switch (currentPinState) {
+			case pinState::UNPINNED :
+				iconSource_ = "ajumper-unpin";
+				break;
+			case pinState::PINNED :
+				iconSource_ = "ajumper-pin";
+				break;
+			case pinState::PINNED_LOCK :
+				iconSource_ = "ajumper-pin-lock";
+				break;
+			case pinState::PINNED_KEY :
+				iconSource_ = "ajumper-pin-key";
+				break;
+		}
+		emit iconSourceChanged();
+		return 0;
+	}
 	else {
-		qDebug() << "getPinState" << response.errorName();
+		qDebug() << "getPinState: " << response.errorName();
 		return 1;
 	}
 }
 
 void ActivityJumperItf::desktopChanged() {
-	//todo: load the pin status from Activity Jumper and store to a member, then implement the "refresh in qml" with onSignalDesktopChanged: { case ActivityJumper.currentPinState bla.source = ...;
-
-	emit signalDesktopChanged();
+	getPinState();
+	emit iconSourceChanged();
 }
