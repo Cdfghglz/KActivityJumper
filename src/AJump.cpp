@@ -6,7 +6,7 @@
 #include "error.hpp"
 
 ActivityJumper::ActivityJumper(QObject *parent)
-		: QObject(parent) {
+		: QObject(parent), lockPinCtr_(maxLockPins_), quickPinCtr_(maxQuickPins_){
 	qDebug() << __PRETTY_FUNCTION__;
 	new ActivityJumperAdaptor(this);
 	QDBusConnection dbus = QDBusConnection::sessionBus();
@@ -55,9 +55,6 @@ void ActivityJumper::loadDestinationMap() {
 	QString configFileName = QDir::homePath() +
 			"/.ActivityJumper/jumperDestinationConfig.config";
 	QFile configFile(configFileName);
-
-	destinationArgMap_.insert("initial", getCurrentPosition());
-	jumpHistory_.append("initial");
 
 	if (configFile.open(QIODevice::ReadOnly)) {
 		QTextStream fileStream(&configFile);
@@ -138,42 +135,177 @@ void ActivityJumper::goToDestination(Position destination) {
 void ActivityJumper::jumpTo(QString destinArg) {
 	Position currentPos = getCurrentPosition();
 	if (!(currentPos == destinationArgMap_[destinArg])) {
-		if (jumpHistory_.last() == "initial") {
-			destinationArgMap_["initial"] = currentPos;
-		}
 
-		goToDestination(destinationArgMap_[destinArg]);
-		if (jumpHistory_.last() != destinArg) {
+		if (jumpHistory_.isEmpty()) {
+			changePinState();
 			jumpHistory_.append(destinArg);
 		}
+		else if (jumpHistory_.last() != destinArg) {
+			jumpHistory_.append(destinArg);
+		}
+		goToDestination(destinationArgMap_[destinArg]);
+
 	}
 }
 
 void ActivityJumper::jumpBack() {
-	Position currentPos = getCurrentPosition();
-	Position prevPos = destinationArgMap_[jumpHistory_.last()];
 
-	if (prevPos == currentPos && !(jumpHistory_.last() == "initial")) {
-		jumpHistory_.pop_back();
-		prevPos = destinationArgMap_[jumpHistory_.last()];
+	if (!jumpHistory_.isEmpty()) {
+		qDebug() << jumpHistory_;
+		Position currentPos = getCurrentPosition();
+
+		if (jumpHistory_.size() == lockPinCtr_.nrPins_) {
+			qDebug() << "mozne?";
+			// cycle through lock pinned
+			QString destKey = "lockpin" + QString::number(lockPinCtr_.getActive());
+			Position prevPos = destinationArgMap_[destKey];
+
+			if (prevPos == currentPos) {
+				incrementLockPtr();
+				QString destKey = "lockpin" + QString::number(lockPinCtr_.getActive());
+			}
+			goToDestination(destinationArgMap_[destKey]);
+
+		}
+		else {
+
+			Position prevPos = destinationArgMap_[jumpHistory_.last()];
+
+			if (prevPos == currentPos) {
+				QString takenKey = jumpHistory_.takeLast();
+				if (!jumpHistory_.isEmpty()) {
+					prevPos = destinationArgMap_[jumpHistory_.last()];
+				}
+				if (takenKey.indexOf("pin") != -1) {
+					QMap<QString, Position>::iterator it = destinationArgMap_.find(takenKey);
+					destinationArgMap_.erase(it);
+					quickPinCtr_.free(takenKey);
+				}
+				qDebug() << "going back to " << takenKey;
+			}
+			goToDestination(prevPos);
+		}
 	}
-
-	goToDestination(prevPos);
 }
 
 pinState ActivityJumper::currentPinState_ = pinState::UNPINNED;
 
 void ActivityJumper::changePinState() {
 	//todo: implement the logic
-	if (currentPinState_ == pinState::UNPINNED) {
-		currentPinState_ = pinState::PINNED;
-	} else {
-		currentPinState_ = pinState::UNPINNED;
+
+	Position currentPos = getCurrentPosition();
+	currentPinState_ = checkCurrentPinState(currentPos);
+
+	switch (currentPinState_) {
+		case pinState::UNPINNED : {
+			int pinNr = quickPinCtr_.nextFree();
+			if (pinNr != -1) {
+				QString historyStr = "pin" + QString::number(pinNr);
+				destinationArgMap_[historyStr] = currentPos;
+				jumpHistory_.append(historyStr);
+				qDebug() << historyStr;
+			}
+			break;
+		}
+
+		case pinState::PINNED : {
+			// change quickpin to lock pin, add it to home
+			break;
+		}
+
+		case pinState::PINNED_LOCK : {
+			break;
+		}
+
+		case pinState::PINNED_KEY : {
+			break;
+		}
+
 	}
 	qDebug() << "The pin status changed to " << currentPinState_ << ".";
-
 }
 
 int ActivityJumper::getPinState() {
-	return currentPinState_;
+	return static_cast<int>(checkCurrentPinState());
 }
+
+pinState ActivityJumper::checkCurrentPinState() {
+	return checkCurrentPinState(getCurrentPosition());
+}
+
+pinState ActivityJumper::checkCurrentPinState(Position currentPos) {
+	QList<Position> valuesList = destinationArgMap_.values();
+
+	for (QMap<QString, Position>::iterator it = destinationArgMap_.begin(); it != destinationArgMap_.end(); ++it)
+	{
+		if (it.value() == currentPos)
+		{
+			currentPinKey_ = it.key();
+			if (currentPinKey_.indexOf("pin") != -1) {
+				int firstIdx = jumpHistory_.indexOf(currentPinKey_);
+				if (firstIdx >= 0 && firstIdx >= lockPinCtr_.nrPins_) return pinState::PINNED;
+				return pinState::PINNED_LOCK;
+			}
+			return pinState::PINNED_KEY;
+		}
+	}
+	return pinState::UNPINNED;
+}
+
+void ActivityJumper::incrementLockPtr() {
+	while (currentLockPtr_ > lockPinCtr_.size()) currentLockPtr_--;
+	currentLockPtr_++;
+	if (currentLockPtr_ > lockPinCtr_.size()) {
+		currentLockPtr_ = 0;
+	}
+}
+
+int PinCtr::nextFree() {
+	if (pinVec.size() <= nrPins_) return -1;
+	for (int i = 0; i < pinVec.size(); ++i) {
+		if (!pinVec[i]) {
+			pinVec[i] = true;
+			nrPins_++;
+			return i;
+		}
+	}
+	return -1;
+}
+
+PinCtr::PinCtr(int maxSize) : pinVec(maxSize) {
+
+}
+
+PinCtr::~PinCtr() {
+
+}
+
+int PinCtr::size() {
+	return pinVec.size();
+}
+
+void PinCtr::free(QString str) {
+	int nrToFree = str.toInt();
+	pinVec[nrToFree] = false;
+	nrPins_--;
+	if (nrToFree == activePtr_) incrementActivePtr();
+}
+
+void PinCtr::incrementActivePtr() {
+	if (this->size() != 0) {
+		for (int i = activePtr_; i < activePtr_ + this->size(); ++i) {
+			if (i >= this->size()) {
+				i = i - this->size();
+			}
+			if (pinVec[i] == true) {
+				activePtr_ = i;
+			}
+		}
+	}
+}
+
+int PinCtr::getActive() {
+	return activePtr_;
+}
+
+

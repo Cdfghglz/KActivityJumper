@@ -4,6 +4,7 @@
 #include <QObject>
 #include <QMap>
 #include <QtDBus/QDBusInterface>
+#include <QVector>
 
 #include "common.h"
 
@@ -29,6 +30,24 @@ struct Position {
 	}
 };
 
+class PinCtr {
+private:
+	QVector<bool> pinVec;
+	int activePtr_;
+
+public:
+	PinCtr(int maxSize) ;
+	~PinCtr();
+
+	int nrPins_;
+
+	int size();
+	int nextFree();
+	void free(QString str);
+
+	void incrementActivePtr();
+	int getActive();
+};
 
 class ActivityJumper: public QObject
 {
@@ -43,8 +62,20 @@ private:
 	QMap<QString, Position> destinationArgMap_;
 	void loadDestinationMap();
 	QStringList jumpHistory_;
+	int historyLimit = 20; //todo: implement
 	Position getCurrentPosition();
 	void goToDestination(Position destination);
+
+	int maxLockPins_ = 5;
+	int maxQuickPins_ = 5;
+	PinCtr lockPinCtr_;
+	PinCtr quickPinCtr_;
+	int currentLockPtr_;
+	QString currentPinKey_;
+
+	pinState checkCurrentPinState();
+	pinState checkCurrentPinState(Position currentPos);
+	void incrementLockPtr();
 
 public:
 	static pinState currentPinState_;
