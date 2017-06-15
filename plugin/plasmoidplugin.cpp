@@ -16,9 +16,9 @@
 */
 
 #include "plasmoidplugin.h"
+#include "AJump.hpp"
 
 #include <QtQml>
-#include <QDebug>
 #include <kwindowsystem.h>
 
 void PlasmoidPlugin::registerTypes(const char *uri)
@@ -70,7 +70,7 @@ int ActivityJumperItf::getPinState() {
 	QDBusMessage response = activityJumperItf->call("getPinState");
 	if (response.type() != QDBusMessage::ErrorMessage){
 
-		pinState currentPinState = static_cast<pinState>(response.arguments().at(0).toInt());
+		PinStateEnum currentPinState = static_cast<PinStateEnum>(response.arguments().at(0).toInt());
 
 		switch (currentPinState) {
 			case pinState::UNPINNED :

@@ -155,15 +155,16 @@ void ActivityJumper::jumpBack() {
 		Position currentPos = getCurrentPosition();
 
 		if (jumpHistory_.size() == lockPinCtr_.nrPins_) {
-			qDebug() << "mozne?";
-			// cycle through lock pinned
+			// if only locked are left, cycle through them
 			QString destKey = "lockpin" + QString::number(lockPinCtr_.getActive());
 			Position prevPos = destinationArgMap_[destKey];
+			lockPinCtr_.incrementActivePtr();
 
 			if (prevPos == currentPos) {
-				incrementLockPtr();
+				lockPinCtr_.incrementActivePtr();
 				QString destKey = "lockpin" + QString::number(lockPinCtr_.getActive());
 			}
+			qDebug() << "we should be cirtling, first to " << destKey;
 			goToDestination(destinationArgMap_[destKey]);
 
 		}
@@ -200,7 +201,7 @@ void ActivityJumper::changePinState() {
 		case pinState::UNPINNED : {
 			int pinNr = quickPinCtr_.nextFree();
 			if (pinNr != -1) {
-				QString historyStr = "pin" + QString::number(pinNr);
+				QString historyStr = "quickpin" + QString::number(pinNr);
 				destinationArgMap_[historyStr] = currentPos;
 				jumpHistory_.append(historyStr);
 				qDebug() << historyStr;
@@ -210,6 +211,23 @@ void ActivityJumper::changePinState() {
 
 		case pinState::PINNED : {
 			// change quickpin to lock pin, add it to home
+
+			int pinNr = lockPinCtr_.nextFree();
+			if (pinNr != -1) {
+				QString historyStr = "lockpin" + QString::number(pinNr);
+				int pinHistoryPos = jumpHistory_.indexOf(currentPinKey_);
+				jumpHistory_.removeAt(pinHistoryPos);
+
+				QMap<QString, Position>::iterator it = destinationArgMap_.find(currentPinKey_);
+				destinationArgMap_.erase(it);
+
+				destinationArgMap_[historyStr] = currentPos;
+				// add to home! increment lock count!
+				jumpHistory_.insert(lockPinCtr_.nrPins_, historyStr);
+				if (jumpHistory_.last() != historyStr) {
+					jumpHistory_.append(historyStr);
+				}
+			}
 			break;
 		}
 
@@ -246,18 +264,10 @@ pinState ActivityJumper::checkCurrentPinState(Position currentPos) {
 				if (firstIdx >= 0 && firstIdx >= lockPinCtr_.nrPins_) return pinState::PINNED;
 				return pinState::PINNED_LOCK;
 			}
-			return pinState::PINNED_KEY;
+			return pinState::PINNED_KEY; // todo: when returned to pinned only, unpin!
 		}
 	}
 	return pinState::UNPINNED;
-}
-
-void ActivityJumper::incrementLockPtr() {
-	while (currentLockPtr_ > lockPinCtr_.size()) currentLockPtr_--;
-	currentLockPtr_++;
-	if (currentLockPtr_ > lockPinCtr_.size()) {
-		currentLockPtr_ = 0;
-	}
 }
 
 int PinCtr::nextFree() {
@@ -266,6 +276,7 @@ int PinCtr::nextFree() {
 		if (!pinVec[i]) {
 			pinVec[i] = true;
 			nrPins_++;
+			if (nrPins_ == 1) activePtr_ = 0;
 			return i;
 		}
 	}
@@ -292,13 +303,17 @@ void PinCtr::free(QString str) {
 }
 
 void PinCtr::incrementActivePtr() {
+	qDebug() << "incrementing active ptr";
 	if (this->size() != 0) {
-		for (int i = activePtr_; i < activePtr_ + this->size(); ++i) {
-			if (i >= this->size()) {
-				i = i - this->size();
-			}
-			if (pinVec[i] == true) {
-				activePtr_ = i;
+		for (int i = activePtr_ + 1; i < activePtr_ + this->size(); ++i) {
+			int j;
+			if (i >= this->size()) j = i - this->size();
+			else j = i;
+
+			if (pinVec[j] == true) {
+				activePtr_ = j;
+				qDebug() << "setting active ptr to " << i;
+				break;
 			}
 		}
 	}
@@ -307,5 +322,4 @@ void PinCtr::incrementActivePtr() {
 int PinCtr::getActive() {
 	return activePtr_;
 }
-
 

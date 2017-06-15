@@ -75,7 +75,6 @@ private:
 
 	pinState checkCurrentPinState();
 	pinState checkCurrentPinState(Position currentPos);
-	void incrementLockPtr();
 
 public:
 	static pinState currentPinState_;
