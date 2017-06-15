@@ -62,7 +62,12 @@ void ActivityJumper::loadDestinationMap() {
 		QStringList destinationEntry;
 
 		while (!fileStream.atEnd()) {
-			destinationEntry = fileStream.readLine().split(" ");
+			QString lineStr = fileStream.readLine();
+			if (lineStr.indexOf("\"") != -1) {
+				destinationEntry = lineStr.split("\"");
+				destinationEntry.first() = destinationEntry.at(0).simplified().replace( " ", "" );
+				destinationEntry.last() = destinationEntry.at(2).simplified().replace( " ", "" );
+			} else destinationEntry = lineStr.split(" ");
 
 			if (destinationEntry.count() == (1 + Position::itemsCt)) {
 
@@ -178,7 +183,6 @@ void ActivityJumper::jumpBack() {
 			if (prevPos == currentPos) {
 				lockPinCtr_.incrementActivePtr();
 				destKey = "lockpin" + QString::number(lockPinCtr_.getActive());
-			} else {
 			}
 
 			goToDestination(destinationArgMap_[destKey]);
