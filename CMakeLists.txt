@@ -46,6 +46,7 @@ find_package(ECM 1.0.0 REQUIRED NO_MODULE)
 set(CMAKE_MODULE_PATH
         ${ECM_MODULE_PATH}
         ${ECM_KDE_MODULE_DIR}
+        ${CMAKE_MODULE_PATH}
         ${CMAKE_CURRENT_SOURCE_DIR}/cmake
         )
 
@@ -72,6 +73,6 @@ include(KDECompilerSettings)
 
 add_subdirectory(plugin)
 
-plasma_install_package(package org.kde.activityjumper)
+plasma_install_package(package org.kde.plasma.activityjumper)
 
 install(DIRECTORY package/icons/breeze DESTINATION ${ICON_INSTALL_DIR})

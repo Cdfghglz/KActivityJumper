@@ -11,7 +11,7 @@ X-Plasma-MainScript=ui/main.qml
 
 X-KDE-PluginInfo-Author=Rastislav Marko
 X-KDE-PluginInfo-Email=cdfghglz@gmail.com   
-X-KDE-PluginInfo-Name=ActivityJumper
+X-KDE-PluginInfo-Name=org.kde.plasma.activityjumper
 X-KDE-PluginInfo-Version=1
 X-KDE-PluginInfo-Website=https://github.com/Cdfghglz/KActivityJumper
 X-KDE-PluginInfo-Category=Utilities
