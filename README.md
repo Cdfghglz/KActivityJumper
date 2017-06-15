@@ -1,10 +1,8 @@
-# KActivityJumper
-A simple KDE application for fast navigation to favorite desktops across activities... and BACK!
+# ActivityJumper
+A simple KDE application for fast navigation to favorite desktops across activities... and back.
 
 ## Use case
-You know the situation when you **focus on a task** in an Activity populated with task specific content. And then **suddenly this email arrives** that you just have to reply to, this song that you just have to skip... So you want to **jump away** for a second and be right **BACK where you left**. Obviously KDE has a great hotkey support, but you do not want to compromise the flexibility of KDE Activities by setting a shortcut for every scenario.  
-
-*You want to interrupt whatever you do by short, known tasks, and be brought back without cognitive effort.*
+If you want enjoy the flexibility of Activities in KDE along with virtual desktops, it becomes ineffective to cover all possible workflow scenarios with keyboard shortcuts. Normally there are **several main tasks** you work on, and a **handful of distractions** - an email that you just have to reply to, a song that you just have to skip... So you want to **jump away** for a second and be right **back where you left**. ActivityJumper helps you do just this. You can pin your current position, jump around to favourite ones and return with no cognitive effort.
 
 ## Instructions
 
@@ -35,9 +33,17 @@ Run `sudo ./install`
 
 ### Use
 
+#### GUI
+Click the *Pin* icon to change the pin-state of the current position, then use the *Back* icon to jump to the pinned positions. When there are multiple pinned positions, the *Back* icon will circle through them endlessly.
+
+#### Keys
 Use the imported shortcuts to jump to desired activities desktops and back.
 
-With the default configuration:  
+With the default configuration:
+Use *'Super + u'*, *'Super + i'*... to jump to any of the 6 desktops of activity "KOM" and then, in reverse order, back to the pinned positions with *'Super + space'*.
 
-Use *'Super + u'*, *'Super + i'*... to jump to any of the 6 desktops of activity "KOM" and then, in reverse order, back to the initial position with *'Super + space'*.
-
+## TODO:
+ - GUI for shortcut editing
+ - handlers for Activity events like Stop/Add/Delete...
+ - localisation
+ - synchronisation between multiple instances 
