@@ -21,6 +21,7 @@
 #include <QObject>
 #include <QQmlExtensionPlugin>
 #include <QtDBus/QDBusInterface>
+#include <KActivities/Consumer>
 
 #include "../src/common.h"
 
@@ -43,6 +44,7 @@ class ActivityJumperItf: public QObject {
 	Q_OBJECT;
 	Q_PROPERTY(QString iconSource READ iconSource WRITE setIconSource NOTIFY iconSourceChanged);
 private:
+	KActivities::Consumer *m_consumer;
 	QDBusInterface *initItfFromStringL(QStringList interfaceStringList);
 	QString iconSource_;
 
