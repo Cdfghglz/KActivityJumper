@@ -16,7 +16,6 @@
 */
 
 #include "plasmoidplugin.h"
-#include "AJump.hpp"
 
 #include <QtQml>
 #include <kwindowsystem.h>
@@ -32,8 +31,7 @@ void PlasmoidPlugin::registerTypes(const char *uri)
 ActivityJumperItf::ActivityJumperItf(QObject *parent) : QObject(parent) {
 	connect(KWindowSystem::self(), &KWindowSystem::currentDesktopChanged, this, &ActivityJumperItf::desktopChanged);
 }
-ActivityJumperItf::~ActivityJumperItf() {
-}
+ActivityJumperItf::~ActivityJumperItf() { }
 
 QDBusInterface * ActivityJumperItf::initItfFromStringL(QStringList interfaceStringList) {
 	QDBusInterface *activityListInterface = new QDBusInterface(

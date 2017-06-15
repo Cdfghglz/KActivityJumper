@@ -5,8 +5,9 @@
 #include <activityjumperadaptor.h>
 #include "error.hpp"
 
+
 ActivityJumper::ActivityJumper(QObject *parent)
-		: QObject(parent), lockPinCtr_(maxLockPins_), quickPinCtr_(maxQuickPins_){
+		: QObject(parent), lockPinCtr_(maxLockPins_), quickPinCtr_(maxQuickPins_) {
 	qDebug() << __PRETTY_FUNCTION__;
 	new ActivityJumperAdaptor(this);
 	QDBusConnection dbus = QDBusConnection::sessionBus();
@@ -19,7 +20,7 @@ ActivityJumper::ActivityJumper(QObject *parent)
 
 ActivityJumper::~ActivityJumper() {}
 
-QDBusInterface * ActivityJumper::initItfFromStringL(QStringList interfaceStringList) {
+QDBusInterface *ActivityJumper::initItfFromStringL(QStringList interfaceStringList) {
 	QDBusInterface *activityListInterface = new QDBusInterface(
 			interfaceStringList[0], interfaceStringList[1], interfaceStringList[2],
 			QDBusConnection::sessionBus(),
@@ -29,7 +30,7 @@ QDBusInterface * ActivityJumper::initItfFromStringL(QStringList interfaceStringL
 
 void ActivityJumper::loadActivityMaps() {
 
-	QDBusInterface* activityManInterface = initItfFromStringL(ACTIVITY_MAN_ITF_STRINGL);
+	QDBusInterface *activityManInterface = initItfFromStringL(ACTIVITY_MAN_ITF_STRINGL);
 	QDBusMessage activityListResponse = activityManInterface->call("ListActivities");
 
 	if (activityListResponse.type() == QDBusMessage::ReplyMessage) {
@@ -38,7 +39,8 @@ void ActivityJumper::loadActivityMaps() {
 
 		while (itr.hasNext()) {
 			QString activityCode = itr.next();
-			QString activityName = activityManInterface->call("ActivityName", activityCode).arguments().at(0).toString();
+			QString activityName = activityManInterface->call("ActivityName", activityCode).arguments().at(
+					0).toString();
 			activityCodeMap_.insert(activityName, activityCode);
 			activityNameMap_.insert(activityCode, activityName);
 		}
@@ -53,7 +55,7 @@ void ActivityJumper::loadActivityMaps() {
 void ActivityJumper::loadDestinationMap() {
 
 	QString configFileName = QDir::homePath() +
-			"/.ActivityJumper/jumperDestinationConfig.config";
+							 "/.ActivityJumper/jumperDestinationConfig.config";
 	QFile configFile(configFileName);
 
 	if (configFile.open(QIODevice::ReadOnly)) {
@@ -86,26 +88,25 @@ void ActivityJumper::loadDestinationMap() {
 				destination.desktopNr = destinationEntry.at(2).toInt();
 
 				destinationArgMap_.insert(destinationArgument, destination);
-			}
-			else {
+			} else {
 				invalidConfigEntry(destinationEntry, "Invalid number of arguments.");
 			}
 		}
-	}
-	else {
+	} else {
 		qDebug() << "Could not open the configuration file " << configFileName;
 	}
 }
 
 Position ActivityJumper::getCurrentPosition() {
 
-	QDBusInterface* activityManInterface = initItfFromStringL(ACTIVITY_MAN_ITF_STRINGL);
+	QDBusInterface *activityManInterface = initItfFromStringL(ACTIVITY_MAN_ITF_STRINGL);
 	QDBusMessage activityListResponse = activityManInterface->call("CurrentActivity");
 
-	QDBusInterface* kwinInterface = initItfFromStringL(KWIN_ITF_STRINGL);
+	QDBusInterface *kwinInterface = initItfFromStringL(KWIN_ITF_STRINGL);
 	QDBusMessage kWinResponse = kwinInterface->call("currentDesktop");
 
-	if (kWinResponse.type() == QDBusMessage::ReplyMessage && activityListResponse.type() == QDBusMessage::ReplyMessage) {
+	if (kWinResponse.type() == QDBusMessage::ReplyMessage &&
+		activityListResponse.type() == QDBusMessage::ReplyMessage) {
 
 		QString activityName = activityNameMap_[activityListResponse.arguments().at(0).toString()];
 		int desktopNr = kWinResponse.arguments().at(0).toString().toInt();
@@ -115,7 +116,8 @@ Position ActivityJumper::getCurrentPosition() {
 		currentPos.desktopNr = desktopNr;
 		return currentPos;
 
-	} else if (kWinResponse.type() == QDBusMessage::ErrorMessage || activityListResponse.type() == QDBusMessage::ErrorMessage) {
+	} else if (kWinResponse.type() == QDBusMessage::ErrorMessage ||
+			   activityListResponse.type() == QDBusMessage::ErrorMessage) {
 		qDebug() << __PRETTY_FUNCTION__;
 		qDebug() << activityListResponse.errorName();
 		qDebug() << kWinResponse.errorName();
@@ -125,8 +127,8 @@ Position ActivityJumper::getCurrentPosition() {
 }
 
 void ActivityJumper::goToDestination(Position destination) {
-	QDBusInterface* activityManInterface = initItfFromStringL(ACTIVITY_MAN_ITF_STRINGL);
-	QDBusInterface* kwinInterface = initItfFromStringL(KWIN_ITF_STRINGL);
+	QDBusInterface *activityManInterface = initItfFromStringL(ACTIVITY_MAN_ITF_STRINGL);
+	QDBusInterface *kwinInterface = initItfFromStringL(KWIN_ITF_STRINGL);
 
 	activityManInterface->call("SetCurrentActivity", activityCodeMap_[destination.activityName]);
 	kwinInterface->call("setCurrentDesktop", destination.desktopNr);
@@ -134,17 +136,35 @@ void ActivityJumper::goToDestination(Position destination) {
 
 void ActivityJumper::jumpTo(QString destinArg) {
 	Position currentPos = getCurrentPosition();
+	qDebug() << "jumping from " << jumpHistory_ << " to " << destinArg;
 	if (!(currentPos == destinationArgMap_[destinArg])) {
+
+		// repin if this is the first jump
+		if (jumpHistory_.size() == 1 &&
+				lockPinCtr_.nrPins() == 0 &&
+				jumpHistory_.last().indexOf("pin") != -1) {
+			QString quickToDel = jumpHistory_.takeLast();
+
+			quickPinCtr_.free(quickToDel);
+			QMap<QString, Position>::iterator it = destinationArgMap_.find(quickToDel);
+			destinationArgMap_.erase(it);
+
+			int pinNr = quickPinCtr_.nextFree();
+			if (pinNr != -1) {
+				QString historyStr = "quickpin" + QString::number(pinNr);
+				destinationArgMap_[historyStr] = currentPos;
+				jumpHistory_.append(historyStr);
+				qDebug() << "repining and jumping from " << historyStr;
+			}
+		}
 
 		if (jumpHistory_.isEmpty()) {
 			changePinState();
 			jumpHistory_.append(destinArg);
-		}
-		else if (jumpHistory_.last() != destinArg) {
+		} else if (jumpHistory_.last() != destinArg) {
 			jumpHistory_.append(destinArg);
 		}
 		goToDestination(destinationArgMap_[destinArg]);
-
 	}
 }
 
@@ -154,21 +174,26 @@ void ActivityJumper::jumpBack() {
 		qDebug() << jumpHistory_;
 		Position currentPos = getCurrentPosition();
 
-		if (jumpHistory_.size() == lockPinCtr_.nrPins_) {
+		if (jumpHistory_.size() == lockPinCtr_.nrPins()) {
 			// if only locked are left, cycle through them
 			QString destKey = "lockpin" + QString::number(lockPinCtr_.getActive());
 			Position prevPos = destinationArgMap_[destKey];
-			lockPinCtr_.incrementActivePtr();
+
+			qDebug() << "on " << currentPinKey_ << ", last to go to " << destKey;
 
 			if (prevPos == currentPos) {
 				lockPinCtr_.incrementActivePtr();
-				QString destKey = "lockpin" + QString::number(lockPinCtr_.getActive());
+				destKey = "lockpin" + QString::number(lockPinCtr_.getActive());
+				qDebug() << "incrementing to " << destKey;
+			} else {
 			}
-			qDebug() << "we should be cirtling, first to " << destKey;
-			goToDestination(destinationArgMap_[destKey]);
 
-		}
-		else {
+			qDebug() << "we should be cirtling, first to " << destKey;
+			qDebug() << destinationArgMap_.keys();
+			goToDestination(destinationArgMap_[destKey]);
+			lockPinCtr_.incrementActivePtr();
+
+		} else {
 
 			Position prevPos = destinationArgMap_[jumpHistory_.last()];
 
@@ -177,12 +202,12 @@ void ActivityJumper::jumpBack() {
 				if (!jumpHistory_.isEmpty()) {
 					prevPos = destinationArgMap_[jumpHistory_.last()];
 				}
-				if (takenKey.indexOf("pin") != -1) {
+				if (takenKey.indexOf("quickpin") != -1) {
 					QMap<QString, Position>::iterator it = destinationArgMap_.find(takenKey);
 					destinationArgMap_.erase(it);
 					quickPinCtr_.free(takenKey);
 				}
-				qDebug() << "going back to " << takenKey;
+				qDebug() << "jumping to " << takenKey;
 			}
 			goToDestination(prevPos);
 		}
@@ -204,7 +229,7 @@ void ActivityJumper::changePinState() {
 				QString historyStr = "quickpin" + QString::number(pinNr);
 				destinationArgMap_[historyStr] = currentPos;
 				jumpHistory_.append(historyStr);
-				qDebug() << historyStr;
+				qDebug() << "appending " << historyStr;
 			}
 			break;
 		}
@@ -212,26 +237,46 @@ void ActivityJumper::changePinState() {
 		case pinState::PINNED : {
 			// change quickpin to lock pin, add it to home
 
+
 			int pinNr = lockPinCtr_.nextFree();
+			qDebug() << "checking if can be locked ";
 			if (pinNr != -1) {
 				QString historyStr = "lockpin" + QString::number(pinNr);
+				qDebug() << "removing quick " << currentPinKey_ << ", adding " << historyStr;
+				qDebug() << jumpHistory_;
+
 				int pinHistoryPos = jumpHistory_.indexOf(currentPinKey_);
-				jumpHistory_.removeAt(pinHistoryPos);
+				if (pinHistoryPos != -1) jumpHistory_.removeAt(pinHistoryPos);
 
 				QMap<QString, Position>::iterator it = destinationArgMap_.find(currentPinKey_);
 				destinationArgMap_.erase(it);
 
 				destinationArgMap_[historyStr] = currentPos;
-				// add to home! increment lock count!
-				jumpHistory_.insert(lockPinCtr_.nrPins_, historyStr);
+				// add to home! increment lock count
+				jumpHistory_.insert(lockPinCtr_.nrPins() - 1, historyStr);
 				if (jumpHistory_.last() != historyStr) {
 					jumpHistory_.append(historyStr);
 				}
+
+				quickPinCtr_.free(currentPinKey_);
+				qDebug() << jumpHistory_;
 			}
 			break;
 		}
 
 		case pinState::PINNED_LOCK : {
+			qDebug() << "unlocking " << currentPinKey_;
+			while (jumpHistory_.indexOf(currentPinKey_) != -1) {
+				int pinHistoryPos = jumpHistory_.indexOf(currentPinKey_);
+				jumpHistory_.removeAt(pinHistoryPos);
+				qDebug() << "cleaning from " << currentPinKey_ << " : " << jumpHistory_;
+			}
+
+			QMap<QString, Position>::iterator it = destinationArgMap_.find(currentPinKey_);
+			destinationArgMap_.erase(it);
+
+			lockPinCtr_.free(currentPinKey_);
+
 			break;
 		}
 
@@ -240,7 +285,7 @@ void ActivityJumper::changePinState() {
 		}
 
 	}
-	qDebug() << "The pin status changed to " << currentPinState_ << ".";
+//	qDebug() << "The pin status changed to " << currentPinState_ << ".";
 }
 
 int ActivityJumper::getPinState() {
@@ -254,29 +299,42 @@ pinState ActivityJumper::checkCurrentPinState() {
 pinState ActivityJumper::checkCurrentPinState(Position currentPos) {
 	QList<Position> valuesList = destinationArgMap_.values();
 
-	for (QMap<QString, Position>::iterator it = destinationArgMap_.begin(); it != destinationArgMap_.end(); ++it)
-	{
-		if (it.value() == currentPos)
-		{
+	for (QMap<QString, Position>::iterator it = destinationArgMap_.begin(); it != destinationArgMap_.end(); ++it) {
+		if (it.value() == currentPos) {
 			currentPinKey_ = it.key();
-			if (currentPinKey_.indexOf("pin") != -1) {
-				int firstIdx = jumpHistory_.indexOf(currentPinKey_);
-				if (firstIdx >= 0 && firstIdx >= lockPinCtr_.nrPins_) return pinState::PINNED;
-				return pinState::PINNED_LOCK;
-			}
-			return pinState::PINNED_KEY; // todo: when returned to pinned only, unpin!
+			if (currentPinKey_.indexOf("lockpin") != -1) return pinState::PINNED_LOCK;
+			else if (currentPinKey_.indexOf("quickpin") != -1) return pinState::PINNED;
+			else return pinState::PINNED_KEY;
+//			return pinState::PINNED_KEY; // todo: when returned to pinned only, unpin!
 		}
 	}
 	return pinState::UNPINNED;
 }
+//
+//void ActivityJumper::desktopChangedHandler() {
+//	qDebug() << "ignlaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
+//	if (jumpHistory_.size() == 1 &&
+//		lockPinCtr_.nrPins() == 0 &&
+//		jumpHistory_.last().indexOf("quickpin") != -1) {
+//		QString quickToDel = jumpHistory_.takeLast();
+//
+//		quickPinCtr_.free(quickToDel);
+//		QMap<QString, Position>::iterator it = destinationArgMap_.find(quickToDel);
+//		destinationArgMap_.erase(it);
+//		qDebug() << "freeing the previously taken quick --------";
+//
+//	}
+//}
 
 int PinCtr::nextFree() {
-	if (pinVec.size() <= nrPins_) return -1;
+	qDebug() << "next pin requested when nrPins() = " << nrPins();
+	if (pinVec.size() < nrPins()) return -1;
 	for (int i = 0; i < pinVec.size(); ++i) {
 		if (!pinVec[i]) {
 			pinVec[i] = true;
-			nrPins_++;
-			if (nrPins_ == 1) activePtr_ = 0;
+//			nrPins_++;
+			if (nrPins() == 1) activePtr_ = 0;
+			qDebug() << "returning free pin nr. " << i;
 			return i;
 		}
 	}
@@ -296,23 +354,29 @@ int PinCtr::size() {
 }
 
 void PinCtr::free(QString str) {
-	int nrToFree = str.toInt();
+	int nrToFree = str.split("n")[1].toInt();
+
+	qDebug() << "freeing " << nrToFree << "from" << str;
 	pinVec[nrToFree] = false;
-	nrPins_--;
+//	nrPins_--;
 	if (nrToFree == activePtr_) incrementActivePtr();
+//	for (int i = 0; i < this->size(); ++i) {
+//		qDebug() << pinVec[i];
+//	}
+//	qDebug() << nrPins();
 }
 
 void PinCtr::incrementActivePtr() {
-	qDebug() << "incrementing active ptr";
 	if (this->size() != 0) {
-		for (int i = activePtr_ + 1; i < activePtr_ + this->size(); ++i) {
+		for (int i = activePtr_ + 1; i < activePtr_ + 1 + this->size(); ++i) {
 			int j;
 			if (i >= this->size()) j = i - this->size();
 			else j = i;
+//			qDebug() << j;
 
 			if (pinVec[j] == true) {
 				activePtr_ = j;
-				qDebug() << "setting active ptr to " << i;
+				qDebug() << "setting active ptr to " << j;
 				break;
 			}
 		}
@@ -321,5 +385,15 @@ void PinCtr::incrementActivePtr() {
 
 int PinCtr::getActive() {
 	return activePtr_;
+}
+
+int PinCtr::nrPins() {
+	int ctr = 0;
+	for (int i = 0; i < this->size(); ++i) {
+		if (pinVec[i] == true) {
+			ctr++;
+		}
+	}
+	return ctr;
 }
 

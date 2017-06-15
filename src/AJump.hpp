@@ -39,7 +39,7 @@ public:
 	PinCtr(int maxSize) ;
 	~PinCtr();
 
-	int nrPins_;
+	int nrPins();
 
 	int size();
 	int nextFree();
@@ -70,7 +70,6 @@ private:
 	int maxQuickPins_ = 5;
 	PinCtr lockPinCtr_;
 	PinCtr quickPinCtr_;
-	int currentLockPtr_;
 	QString currentPinKey_;
 
 	pinState checkCurrentPinState();
@@ -86,6 +85,8 @@ public slots:
 	void jumpBack();
 	void changePinState();
 	int getPinState();
+
+//	void desktopChangedHandler();
 
 };
 
