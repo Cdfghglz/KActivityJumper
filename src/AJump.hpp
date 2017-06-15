@@ -40,7 +40,6 @@ public:
 	~PinCtr();
 
 	int nrPins();
-
 	int size();
 	int nextFree();
 	void free(QString str);
@@ -85,8 +84,6 @@ public slots:
 	void jumpBack();
 	void changePinState();
 	int getPinState();
-
-//	void desktopChangedHandler();
 
 };
 
