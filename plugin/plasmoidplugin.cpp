@@ -1,5 +1,5 @@
 
-#include "plasmoidplugin.h"
+#include "plasmoidplugin.hpp"
 
 #include <QtQml>
 #include <kwindowsystem.h>

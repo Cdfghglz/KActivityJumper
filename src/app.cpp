@@ -1,6 +1,6 @@
 #include <QCoreApplication>
 
-#include "AJump.hpp"
+#include "activityjumper.hpp"
 
 int main(int ac, char **av)
 {

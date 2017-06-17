@@ -9,26 +9,26 @@ set(SOURCE_FILES
         org.kde.ActivityJumper.xml
 
         src/error.hpp
-        src/AJump.hpp
+        src/activityjumper.hpp
         src/common.h)
 
 set(SOURCE_FILES ${SOURCE_FILES}
         src/error.cpp
         src/app.cpp
-        src/AJump.cpp
+        src/activityjumper.cpp
         )
 
-qt5_generate_dbus_interface(src/AJump.hpp
+qt5_generate_dbus_interface(src/activityjumper.hpp
     org.kde.ActivityJumper.xml
     OPTIONS -A
 )
 qt5_add_dbus_adaptor(SOURCE_FILES
     ${CMAKE_CURRENT_BINARY_DIR}/org.kde.ActivityJumper.xml
-    src/AJump.hpp
+        src/activityjumper.hpp
     ActivityJumper
 )
 
-qt5_wrap_cpp(ajump_moc src/AJump.hpp)
+qt5_wrap_cpp(ajump_moc src/activityjumper.hpp)
 add_executable(ActivityJumper
     ${ajump_moc}
     ${SOURCE_FILES}

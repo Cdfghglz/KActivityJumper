@@ -1,7 +1,7 @@
 #include <QDebug>
 #include <QDir>
 
-#include "AJump.hpp"
+#include "activityjumper.hpp"
 #include <activityjumperadaptor.h>
 #include "error.hpp"
 
@@ -144,7 +144,7 @@ void ActivityJumper::jumpTo(QString destinArg) {
 
 		// repin if this is the first jump
 		if (jumpHistory_.size() == 1 &&
-				lockPinCtr_.nrPins() == 0 &&
+				lockPinCtr_.pinCt() == 0 &&
 				jumpHistory_.last().indexOf("pin") != -1) {
 			QString quickToDel = jumpHistory_.takeLast();
 
@@ -152,7 +152,7 @@ void ActivityJumper::jumpTo(QString destinArg) {
 			QMap<QString, Position>::iterator it = destinationArgMap_.find(quickToDel);
 			destinationArgMap_.erase(it);
 
-			int pinNr = quickPinCtr_.nextFree();
+			int pinNr = quickPinCtr_.registerNext();
 			if (pinNr != -1) {
 				QString historyStr = "quickpin" + QString::number(pinNr);
 				destinationArgMap_[historyStr] = currentPos;
@@ -175,14 +175,14 @@ void ActivityJumper::jumpBack() {
 	if (!jumpHistory_.isEmpty()) {
 		Position currentPos = getCurrentPosition();
 
-		if (jumpHistory_.size() == lockPinCtr_.nrPins()) {
+		if (jumpHistory_.size() == lockPinCtr_.pinCt()) {
 			// if only locked are left, cycle through them
-			QString destKey = "lockpin" + QString::number(lockPinCtr_.getActive());
+			QString destKey = "lockpin" + QString::number(lockPinCtr_.getCurrentPtr());
 			Position prevPos = destinationArgMap_[destKey];
 
 			if (prevPos == currentPos) {
 				lockPinCtr_.incrementActivePtr();
-				destKey = "lockpin" + QString::number(lockPinCtr_.getActive());
+				destKey = "lockpin" + QString::number(lockPinCtr_.getCurrentPtr());
 			}
 
 			goToDestination(destinationArgMap_[destKey]);
@@ -216,7 +216,7 @@ void ActivityJumper::changePinState() {
 
 	switch (currentPinState_) {
 		case pinState::UNPINNED : {
-			int pinNr = quickPinCtr_.nextFree();
+			int pinNr = quickPinCtr_.registerNext();
 			if (pinNr != -1) {
 				QString historyStr = "quickpin" + QString::number(pinNr);
 				destinationArgMap_[historyStr] = currentPos;
@@ -227,7 +227,7 @@ void ActivityJumper::changePinState() {
 
 		case pinState::PINNED : {
 			// change quickpin to lock pin, add it to locks history
-			int pinNr = lockPinCtr_.nextFree();
+			int pinNr = lockPinCtr_.registerNext();
 			if (pinNr != -1) {
 				QString historyStr = "lockpin" + QString::number(pinNr);
 
@@ -239,7 +239,7 @@ void ActivityJumper::changePinState() {
 
 				destinationArgMap_[historyStr] = currentPos;
 				// add to locks history! increment lock count
-				jumpHistory_.insert(lockPinCtr_.nrPins() - 1, historyStr);
+				jumpHistory_.insert(lockPinCtr_.pinCt() - 1, historyStr);
 				if (jumpHistory_.last() != historyStr) {
 					jumpHistory_.append(historyStr);
 				}
@@ -291,29 +291,29 @@ pinState ActivityJumper::checkCurrentPinState(Position currentPos) {
 	return pinState::UNPINNED;
 }
 
-int PinCtr::nextFree() {
-	if (pinVec.size() < nrPins()) return -1;
-	for (int i = 0; i < pinVec.size(); ++i) {
-		if (!pinVec[i]) {
-			pinVec[i] = true;
-			if (nrPins() == 1) activePtr_ = 0;
+int PinCtr::registerNext() {
+	if (pinVec_.size() < pinCt()) return -1;
+	for (int i = 0; i < pinVec_.size(); ++i) {
+		if (!pinVec_[i]) {
+			pinVec_[i] = true;
+			if (pinCt() == 1) activePtr_ = 0;
 			return i;
 		}
 	}
 	return -1;
 }
 
-PinCtr::PinCtr(int maxSize) : pinVec(maxSize) { }
+PinCtr::PinCtr(int maxSize) : pinVec_(maxSize) { }
 
 PinCtr::~PinCtr() { }
 
 int PinCtr::size() {
-	return pinVec.size();
+	return pinVec_.size();
 }
 
 void PinCtr::free(QString str) {
 	int nrToFree = str.split("n")[1].toInt();
-	pinVec[nrToFree] = false;
+	pinVec_[nrToFree] = false;
 
 	if (nrToFree == activePtr_) incrementActivePtr();
 }
@@ -325,7 +325,7 @@ void PinCtr::incrementActivePtr() {
 			if (i >= this->size()) j = i - this->size();
 			else j = i;
 
-			if (pinVec[j] == true) {
+			if (pinVec_[j] == true) {
 				activePtr_ = j;
 				break;
 			}
@@ -333,14 +333,14 @@ void PinCtr::incrementActivePtr() {
 	}
 }
 
-int PinCtr::getActive() {
+int PinCtr::getCurrentPtr() {
 	return activePtr_;
 }
 
-int PinCtr::nrPins() {
+int PinCtr::pinCt() {
 	int ctr = 0;
 	for (int i = 0; i < this->size(); ++i) {
-		if (pinVec[i] == true) {
+		if (pinVec_[i] == true) {
 			ctr++;
 		}
 	}

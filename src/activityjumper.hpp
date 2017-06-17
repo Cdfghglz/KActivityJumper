@@ -32,20 +32,20 @@ struct Position {
 
 class PinCtr {
 private:
-	QVector<bool> pinVec;
+	QVector<bool> pinVec_;
 	int activePtr_;
 
 public:
-	PinCtr(int maxSize) ;
+	PinCtr(int maxSize);
 	~PinCtr();
 
-	int nrPins();
+	int pinCt();
 	int size();
-	int nextFree();
+	int registerNext();
 	void free(QString str);
 
 	void incrementActivePtr();
-	int getActive();
+	int getCurrentPtr();
 };
 
 class ActivityJumper: public QObject
@@ -71,11 +71,11 @@ private:
 	PinCtr quickPinCtr_;
 	QString currentPinKey_;
 
+	static pinState currentPinState_;
 	pinState checkCurrentPinState();
 	pinState checkCurrentPinState(Position currentPos);
 
 public:
-	static pinState currentPinState_;
     ActivityJumper(QObject *parent = Q_NULLPTR);
     virtual ~ActivityJumper();
 
