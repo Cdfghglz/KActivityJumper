@@ -18,6 +18,7 @@
 #ifndef PLASMOIDPLUGIN_H
 #define PLASMOIDPLUGIN_H
 
+#include <memory>
 #include <QObject>
 #include <QQmlExtensionPlugin>
 #include <QtDBus/QDBusInterface>
@@ -44,12 +45,12 @@ class ActivityJumperItf: public QObject {
 	Q_OBJECT;
 	Q_PROPERTY(QString iconSource READ iconSource WRITE setIconSource NOTIFY iconSourceChanged);
 private:
-	KActivities::Consumer *m_consumer;
+	std::unique_ptr<KActivities::Consumer> consumer_;
 	QDBusInterface *initItfFromStringL(QStringList interfaceStringList);
 	QString iconSource_;
 
 public:
-	ActivityJumperItf(QObject *parent = 0);
+	ActivityJumperItf(QObject *parent = nullptr);
 	~ActivityJumperItf();
 
 	QString iconSource() const {

@@ -11,9 +11,9 @@ void PlasmoidPlugin::registerTypes(const char *uri)
     qmlRegisterType<ActivityJumperItf>(uri, 1, 0, "ActivityJumper");
 }
 
-ActivityJumperItf::ActivityJumperItf(QObject *parent) : QObject(parent), m_consumer(new KActivities::Consumer) {
+ActivityJumperItf::ActivityJumperItf(QObject *parent) : QObject(parent), consumer_(new KActivities::Consumer) {
 	connect(KWindowSystem::self(), &KWindowSystem::currentDesktopChanged, this, &ActivityJumperItf::desktopChanged);
-	connect(m_consumer, &KActivities::Consumer::currentActivityChanged, this, &ActivityJumperItf::desktopChanged);
+	connect(consumer_.get(), &KActivities::Consumer::currentActivityChanged, this, &ActivityJumperItf::desktopChanged);
 
 }
 ActivityJumperItf::~ActivityJumperItf() { }
