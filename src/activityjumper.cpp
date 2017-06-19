@@ -176,6 +176,7 @@ void ActivityJumper::jumpBack() {
 		Position currentPos = getCurrentPosition();
 
 		if (jumpHistory_.size() == lockPinCtr_.pinCt()) {
+			lockPinCtr_.incrementActivePtr();
 			// if only locked are left, cycle through them
 			QString destKey = "lockpin" + QString::number(lockPinCtr_.getCurrentPtr());
 			Position prevPos = destinationArgMap_[destKey];
@@ -186,7 +187,6 @@ void ActivityJumper::jumpBack() {
 			}
 
 			goToDestination(destinationArgMap_[destKey]);
-			lockPinCtr_.incrementActivePtr();
 
 		} else {
 			Position prevPos = destinationArgMap_[jumpHistory_.last()];
@@ -201,6 +201,10 @@ void ActivityJumper::jumpBack() {
 					destinationArgMap_.erase(it);
 					quickPinCtr_.free(takenKey);
 				}
+			}
+			if (jumpHistory_.size() == lockPinCtr_.pinCt()) {
+				QString destKey = "lockpin" + QString::number(lockPinCtr_.getCurrentPtr());
+				prevPos = destinationArgMap_[destKey];
 			}
 			goToDestination(prevPos);
 		}
