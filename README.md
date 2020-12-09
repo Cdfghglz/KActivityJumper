@@ -36,7 +36,7 @@ If you want enjoy the flexibility of Activities in KDE along with virtual deskto
 #### Kubuntu 16.04
 `sudo apt install plasma-framework-dev plasma-workspace-dev libkf5declarative-dev libkf5globalaccel-dev libkf5configwidgets-dev libkf5xmlgui-dev libkf5windowsystem-dev kdoctools-dev cmake extra-cmake-modules kdelibs5-dev libkf5activities-dev`
 
-*NOTE: please replace the `kf5-config` with `kde4-config` in the *install* file.
+*NOTE: please replace the `kf5-config` with `kde4-config` in the *install* file when installing on pre-KF5 system.
 
 ### Configure
 1. Edit ***jumperDestinationConfig.config***  
@@ -63,6 +63,9 @@ Similarly you can uninstall with `sudo ./uninstall`
 ### Use
 
 #### GUI
+
+Add the ActivityJumper Plasma widget to where you like it most.
+
 Click the *Pin* icon ![](package/icons/breeze/apps/16/ajumper-pin.svg) to change the pin-state of the current position, then use the *Back* ![](package/icons/breeze/apps/16/ajumper-back.svg) icon to jump to the pinned positions. When there are multiple pinned positions, the *Back* icon will circle through them endlessly.
 
 #### Keys
