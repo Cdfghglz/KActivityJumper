@@ -2,7 +2,7 @@
 A simple KDE application for fast navigation to favorite desktops across activities... and back.
 
 ## Use case
-If you want enjoy the flexibility of Activities in KDE along with virtual desktops, it becomes ineffective to cover all possible workflow scenarios with keyboard shortcuts. Normally there are **several main tasks** you work on, and a **handful of distractions** - an email that you just have to reply to, a song that you just have to skip... So you want to **jump away** for a second and be right **back where you left**. ActivityJumper helps you do just this. You can pin your current position, jump around to favourite ones and return with no cognitive effort.
+If you enjoy the flexibility of Activities in KDE along with virtual desktops, it may become ineffective to cover all possible workflow scenarios with keyboard shortcuts. Normally there are **several main tasks** you work on, and a **handful of distractions** - an email that you just have to reply to, a song that you just have to skip... So you want to **jump away** for a second and be right **back where you left**. ActivityJumper helps you do just this. You can pin your current position, jump around to favourite ones and return with no cognitive effort.
 
 ## Contents
 
@@ -44,7 +44,8 @@ File has the syntax `dbus_method_arg activity_name desktop_number\n`, e.g.:
 `u KOM 1`  
 `i KOM 2`  
 `...`  
-Replace the *KOM* with desired and existing activity name, change the desktop numbers as needed.  
+Replace the *KOM* with desired and existing activity name, change the desktop numbers as needed. If the activity name inlcudes space character, wrap it with double quotes, e.g. *"Activity KOM"*.
+
 
 2. Import ***myJumperShortcutExport.khotkeys***  
 A corresponding *myJumperShortcutExport.khotkeys* KDE hotkeys configuration file is included. This should be imported with right klick under *System Settings -> Shortcuts -> Custom Shortcuts*.  
@@ -76,6 +77,7 @@ Use *'Super + u'*, *'Super + i'*... to jump to any of the 6 desktops of activity
 
 ## TODO:
  - GUI for shortcut editing
+ - add icon layout flexibility
  - handlers for Activity events like Stop/Add/Delete...
  - localisation
  - synchronisation between multiple instances 
