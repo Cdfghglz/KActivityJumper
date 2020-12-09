@@ -1,0 +1,12 @@
+rm /usr/bin/ActivityJumper
+rm /usr/share/dbus-1/services/org.kde.ActivityJumper.service
+rm /usr/share/dbus-1/interfaces/org.kde.ActivityJumper.xml
+rm -r /usr/share/plasma/plasmoids/org.kde.plasma.activityjumper
+rm /usr/share/metainfo/org.kde.plasma.activityjumper.appdata.xml
+rm /usr/share/kservices5/plasma-applet-org.kde.plasma.activityjumper.desktop
+rm /usr/share/icons/breeze_/apps/16/ajumper*
+rm /usr/share/icons/breeze_/apps/22/ajumper*
+rm /usr/share/icons/breeze/apps/16/ajumper*
+rm /usr/share/icons/breeze/apps/22/ajumper*
+rm /usr/lib/x86_64-linux-gnu/qt5/qml/org/kde/private/activityjumper/libplasmoidplugin.so
+rm /usr/lib/x86_64-linux-gnu/qt5/qml/org/kde/private/activityjumper/qmldir
