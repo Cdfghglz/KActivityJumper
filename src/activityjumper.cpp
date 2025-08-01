@@ -141,6 +141,12 @@ void ActivityJumper::goToDestination(Position destination) {
 void ActivityJumper::jumpTo(QString destinArg) {
 	Position currentPos = getCurrentPosition();
 	if (!(currentPos == destinationArgMap_[destinArg])) {
+		
+		// Auto-pin current position if it's unpinned before jumping away
+		pinState currentState = checkCurrentPinState(currentPos);
+		if (currentState == pinState::UNPINNED) {
+			changePinState(pinState::PINNED);
+		}
 
 		// repin if this is the first jump
 		if (jumpHistory_.size() == 1 &&
@@ -207,62 +213,139 @@ void ActivityJumper::jumpBack() {
 				prevPos = destinationArgMap_[destKey];
 			}
 			goToDestination(prevPos);
+			
+			// Unpin the destination we just jumped to, since we've "consumed" the pin
+			Position newCurrentPos = getCurrentPosition();
+			pinState newPinState = checkCurrentPinState(newCurrentPos);
+			if (newPinState == pinState::PINNED) {
+				changePinState(pinState::UNPINNED);
+			}
 		}
 	}
 }
 
 pinState ActivityJumper::currentPinState_ = pinState::UNPINNED;
 
-void ActivityJumper::changePinState() {
-
+void ActivityJumper::changePinState(pinState targetState) {
 	Position currentPos = getCurrentPosition();
-	currentPinState_ = checkCurrentPinState(currentPos);
-
-	switch (currentPinState_) {
-		case pinState::UNPINNED : {
+	pinState currentState = checkCurrentPinState(currentPos);
+	
+	// If already in target state, do nothing
+	if (currentState == targetState) {
+		currentPinState_ = targetState;
+		return;
+	}
+	
+	// First, clean up current state if needed
+	if (currentState != pinState::UNPINNED) {
+		cleanupCurrentPin(currentState);
+	}
+	
+	// Then set to target state
+	switch (targetState) {
+		case pinState::UNPINNED: {
+			// Already cleaned up above, just update the state
+			currentPinState_ = pinState::UNPINNED;
+			break;
+		}
+		
+		case pinState::PINNED: {
 			int pinNr = quickPinCtr_.registerNext();
 			if (pinNr != -1) {
 				QString historyStr = "quickpin" + QString::number(pinNr);
 				destinationArgMap_[historyStr] = currentPos;
 				jumpHistory_.append(historyStr);
+				currentPinState_ = pinState::PINNED;
 			}
 			break;
 		}
-
-		case pinState::PINNED : {
-			// change quickpin to lock pin, add it to locks history
+		
+		case pinState::PINNED_LOCK: {
 			int pinNr = lockPinCtr_.registerNext();
 			if (pinNr != -1) {
 				QString historyStr = "lockpin" + QString::number(pinNr);
-
-				int pinHistoryPos = jumpHistory_.indexOf(currentPinKey_);
-				if (pinHistoryPos != -1) jumpHistory_.removeAt(pinHistoryPos);
-
-				QMap<QString, Position>::iterator it = destinationArgMap_.find(currentPinKey_);
-				destinationArgMap_.erase(it);
-
 				destinationArgMap_[historyStr] = currentPos;
-				// add to locks history! increment lock count
+				// Add to locks history! increment lock count
 				jumpHistory_.insert(lockPinCtr_.pinCt() - 1, historyStr);
 				if (jumpHistory_.last() != historyStr) {
 					jumpHistory_.append(historyStr);
 				}
-
-				quickPinCtr_.free(currentPinKey_);
+				currentPinState_ = pinState::PINNED_LOCK;
 			}
 			break;
 		}
+		
+		case pinState::PINNED_KEY: {
+			// PINNED_KEY state is for predefined destination keys, 
+			// cannot be set programmatically
+			currentPinState_ = currentState; // Keep current state
+			break;
+		}
+	}
+}
 
-		case pinState::PINNED_LOCK : {
+void ActivityJumper::cleanupCurrentPin(pinState currentState) {
+	switch (currentState) {
+		case pinState::PINNED: {
+			// Remove quickpin
+			int pinHistoryPos = jumpHistory_.indexOf(currentPinKey_);
+			if (pinHistoryPos != -1) jumpHistory_.removeAt(pinHistoryPos);
+			
+			QMap<QString, Position>::iterator it = destinationArgMap_.find(currentPinKey_);
+			if (it != destinationArgMap_.end()) {
+				destinationArgMap_.erase(it);
+			}
+			
+			quickPinCtr_.free(currentPinKey_);
+			break;
+		}
+		
+		case pinState::PINNED_LOCK: {
+			// Remove lockpin
 			while (jumpHistory_.indexOf(currentPinKey_) != -1) {
 				int pinHistoryPos = jumpHistory_.indexOf(currentPinKey_);
 				jumpHistory_.removeAt(pinHistoryPos);
 			}
-
+			
 			QMap<QString, Position>::iterator it = destinationArgMap_.find(currentPinKey_);
-			destinationArgMap_.erase(it);
-
+			if (it != destinationArgMap_.end()) {
+				destinationArgMap_.erase(it);
+			}
+			
 			lockPinCtr_.free(currentPinKey_);
+			break;
+		}
+		
+		case pinState::PINNED_KEY: {
+			// PINNED_KEY entries are permanent, don't remove them
+			break;
+		}
+		
+		case pinState::UNPINNED: {
+			// Nothing to clean up
+			break;
+		}
+	}
+}
+
+void ActivityJumper::changePinState() {
+	// Pinning state machine cycling through UNPINNED, PINNED, PINNED_LOCK
+	Position currentPos = getCurrentPosition();
+	currentPinState_ = checkCurrentPinState(currentPos);
+
+	switch (currentPinState_) {
+		case pinState::UNPINNED : {
+			changePinState(pinState::PINNED);
+			break;
+		}
+
+		case pinState::PINNED : {
+			changePinState(pinState::PINNED_LOCK);
+			break;
+		}
+
+		case pinState::PINNED_LOCK : {
+			changePinState(pinState::UNPINNED);
 			break;
 		}
 

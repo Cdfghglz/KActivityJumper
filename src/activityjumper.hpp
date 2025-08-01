@@ -64,6 +64,7 @@ private:
 	int historyLimit = 20; //todo: implement
 	Position getCurrentPosition();
 	void goToDestination(Position destination);
+	void cleanupCurrentPin(pinState currentState);
 
 	int maxLockPins_ = 5;
 	int maxQuickPins_ = 5;
@@ -83,6 +84,7 @@ public slots:
     void jumpTo(QString destinArg);
 	void jumpBack();
 	void changePinState();
+	void changePinState(pinState targetState);
 	int getPinState();
 
 };
