@@ -21,7 +21,7 @@ struct Position {
 	static const uint itemsCt = 2;
 
 	QString activityName;
-	int desktopNr;
+	int desktopNr = 0;
 	bool operator==(Position pos) {
 		if (this->activityName == pos.activityName
 				&& this->desktopNr == pos.desktopNr)
@@ -33,7 +33,7 @@ struct Position {
 class PinCtr {
 private:
 	QVector<bool> pinVec_;
-	int activePtr_;
+	int activePtr_ = 0;
 
 public:
 	PinCtr(int maxSize);
@@ -55,6 +55,11 @@ class ActivityJumper: public QObject
 
 private:
 	QDBusInterface *initItfFromStringL(QStringList interfaceStringList);
+	// Created once: building a QDBusInterface does a blocking Introspect call, and
+	// the old per-call `new` leaked two of them on every position query/jump.
+	QDBusInterface *activityManItf_ = nullptr;
+	QDBusInterface *kwinItf_ = nullptr;
+	static bool isValid(const Position &pos);
 	QMap<QString, QString> activityCodeMap_;
 	QMap<QString, QString> activityNameMap_;
 	void loadActivityMaps();
@@ -64,7 +69,8 @@ private:
 	int historyLimit = 20; //todo: implement
 	Position getCurrentPosition();
 	void goToDestination(Position destination);
-	void cleanupCurrentPin(pinState currentState);
+	void cleanupCurrentPin(pinState currentState, const QString &pinKey);
+	void removeQuickPin(const QString &pinKey);
 
 	int maxLockPins_ = 5;
 	int maxQuickPins_ = 5;
@@ -75,6 +81,8 @@ private:
 	static pinState currentPinState_;
 	pinState checkCurrentPinState();
 	pinState checkCurrentPinState(Position currentPos);
+	pinState checkPinState(Position pos, QString *pinKey);
+	static QString positionString(const Position &pos);
 
 public:
     ActivityJumper(QObject *parent = Q_NULLPTR);
@@ -86,6 +94,10 @@ public slots:
 	void changePinState();
 	void changePinState(pinState targetState);
 	int getPinState();
+	void onDesktopChanged();
+
+signals:
+	void pinStateChanged(int state);
 
 };
 

@@ -14,8 +14,32 @@ ActivityJumper::ActivityJumper(QObject *parent)
 	dbus.registerObject("/ActivityJumper", this);
 	dbus.registerService("org.kde.ActivityJumper");
 
+	activityManItf_ = initItfFromStringL(ACTIVITY_MAN_ITF_STRINGL);
+	kwinItf_ = initItfFromStringL(KWIN_ITF_STRINGL);
+
 	loadActivityMaps();
 	loadDestinationMap();
+
+	// Tell the panel widget the pin state of wherever we are now, on every desktop
+	// and activity change. (The 2026 build used KWindowSystem, which does not work
+	// in a QCoreApplication -- "Cannot use KWindowSystem without a QGuiApplication"
+	// -- so the icon only updated on activity switches and went stale.)
+	dbus.connect("org.kde.KWin", "/VirtualDesktopManager", "org.kde.KWin.VirtualDesktopManager",
+				 "currentChanged", this, SLOT(onDesktopChanged()));
+	dbus.connect(ACTIVITY_MAN_ITF_STRINGL[0], ACTIVITY_MAN_ITF_STRINGL[1], ACTIVITY_MAN_ITF_STRINGL[2],
+				 "CurrentActivityChanged", this, SLOT(onDesktopChanged()));
+}
+
+bool ActivityJumper::isValid(const Position &pos) {
+	return !pos.activityName.isEmpty() && pos.desktopNr > 0;
+}
+
+QString ActivityJumper::positionString(const Position &pos) {
+	return pos.activityName + ":" + QString::number(pos.desktopNr);
+}
+
+void ActivityJumper::onDesktopChanged() {
+	emit pinStateChanged(static_cast<int>(checkCurrentPinState()));
 }
 
 ActivityJumper::~ActivityJumper() {}
@@ -103,11 +127,8 @@ void ActivityJumper::loadDestinationMap() {
 
 Position ActivityJumper::getCurrentPosition() {
 
-	QDBusInterface *activityManInterface = initItfFromStringL(ACTIVITY_MAN_ITF_STRINGL);
-	QDBusMessage activityListResponse = activityManInterface->call("CurrentActivity");
-
-	QDBusInterface *kwinInterface = initItfFromStringL(KWIN_ITF_STRINGL);
-	QDBusMessage kWinResponse = kwinInterface->call("currentDesktop");
+	QDBusMessage activityListResponse = activityManItf_->call("CurrentActivity");
+	QDBusMessage kWinResponse = kwinItf_->call("currentDesktop");
 
 	if (kWinResponse.type() == QDBusMessage::ReplyMessage &&
 		activityListResponse.type() == QDBusMessage::ReplyMessage) {
@@ -131,15 +152,20 @@ Position ActivityJumper::getCurrentPosition() {
 }
 
 void ActivityJumper::goToDestination(Position destination) {
-	QDBusInterface *activityManInterface = initItfFromStringL(ACTIVITY_MAN_ITF_STRINGL);
-	QDBusInterface *kwinInterface = initItfFromStringL(KWIN_ITF_STRINGL);
-
-	activityManInterface->call("SetCurrentActivity", activityCodeMap_[destination.activityName]);
-	kwinInterface->call("setCurrentDesktop", destination.desktopNr);
+	if (!isValid(destination)) {
+		qDebug() << "goToDestination: invalid destination" << positionString(destination) << "- not jumping";
+		return;
+	}
+	activityManItf_->call("SetCurrentActivity", activityCodeMap_[destination.activityName]);
+	kwinItf_->call("setCurrentDesktop", destination.desktopNr);
 }
 
 void ActivityJumper::jumpTo(QString destinArg) {
 	Position currentPos = getCurrentPosition();
+	if (!isValid(currentPos) || !destinationArgMap_.contains(destinArg)) {
+		qDebug() << "jumpTo" << destinArg << ": invalid position or unknown destination, ignoring";
+		return;
+	}
 	if (!(currentPos == destinationArgMap_[destinArg])) {
 		
 		// Auto-pin current position if it's unpinned before jumping away
@@ -153,10 +179,9 @@ void ActivityJumper::jumpTo(QString destinArg) {
 				lockPinCtr_.pinCt() == 0 &&
 				jumpHistory_.last().indexOf("pin") != -1) {
 			QString quickToDel = jumpHistory_.takeLast();
-
-			quickPinCtr_.free(quickToDel);
-			QMap<QString, Position>::iterator it = destinationArgMap_.find(quickToDel);
-			destinationArgMap_.erase(it);
+			if (quickToDel.indexOf("quickpin") != -1) {
+				removeQuickPin(quickToDel);
+			}
 
 			int pinNr = quickPinCtr_.registerNext();
 			if (pinNr != -1) {
@@ -173,6 +198,7 @@ void ActivityJumper::jumpTo(QString destinArg) {
 			jumpHistory_.append(destinArg);
 		}
 		goToDestination(destinationArgMap_[destinArg]);
+		emit pinStateChanged(static_cast<int>(checkCurrentPinState()));
 	}
 }
 
@@ -180,6 +206,10 @@ void ActivityJumper::jumpBack() {
 
 	if (!jumpHistory_.isEmpty()) {
 		Position currentPos = getCurrentPosition();
+		if (!isValid(currentPos)) {
+			qDebug() << "jumpBack: could not read current position, ignoring";
+			return;
+		}
 
 		if (jumpHistory_.size() == lockPinCtr_.pinCt()) {
 			lockPinCtr_.incrementActivePtr();
@@ -195,32 +225,36 @@ void ActivityJumper::jumpBack() {
 			goToDestination(destinationArgMap_[destKey]);
 
 		} else {
-			Position prevPos = destinationArgMap_[jumpHistory_.last()];
+			QString destKey = jumpHistory_.last();
+			Position prevPos = destinationArgMap_[destKey];
 
 			if (prevPos == currentPos) {
 				QString takenKey = jumpHistory_.takeLast();
+				destKey.clear();
 				if (!jumpHistory_.isEmpty()) {
-					prevPos = destinationArgMap_[jumpHistory_.last()];
+					destKey = jumpHistory_.last();
+					prevPos = destinationArgMap_[destKey];
 				}
 				if (takenKey.indexOf("quickpin") != -1) {
-					QMap<QString, Position>::iterator it = destinationArgMap_.find(takenKey);
-					destinationArgMap_.erase(it);
-					quickPinCtr_.free(takenKey);
+					removeQuickPin(takenKey);
 				}
 			}
-			if (jumpHistory_.size() == lockPinCtr_.pinCt()) {
-				QString destKey = "lockpin" + QString::number(lockPinCtr_.getCurrentPtr());
+			if (jumpHistory_.size() == lockPinCtr_.pinCt() && lockPinCtr_.pinCt() > 0) {
+				destKey = "lockpin" + QString::number(lockPinCtr_.getCurrentPtr());
 				prevPos = destinationArgMap_[destKey];
 			}
 			goToDestination(prevPos);
-			
-			// Unpin the destination we just jumped to, since we've "consumed" the pin
-			Position newCurrentPos = getCurrentPosition();
-			pinState newPinState = checkCurrentPinState(newCurrentPos);
-			if (newPinState == pinState::PINNED) {
-				changePinState(pinState::UNPINNED);
+
+			// Consume the quick pin we just jumped to. Decided by the key we jumped
+			// to, NOT by re-reading the position: the old code re-read it right after
+			// the jump (could still be the old spot) and then changePinState(UNPINNED)
+			// read it a second time -- if that read had landed on a lock, the lock
+			// was removed. Locks and destination keys are never consumed here.
+			if (destKey.indexOf("quickpin") != -1) {
+				removeQuickPin(destKey);
 			}
 		}
+		emit pinStateChanged(static_cast<int>(checkCurrentPinState()));
 	}
 }
 
@@ -228,7 +262,12 @@ pinState ActivityJumper::currentPinState_ = pinState::UNPINNED;
 
 void ActivityJumper::changePinState(pinState targetState) {
 	Position currentPos = getCurrentPosition();
-	pinState currentState = checkCurrentPinState(currentPos);
+	if (!isValid(currentPos)) {
+		qDebug() << "changePinState: could not read current position, ignoring";
+		return;
+	}
+	QString pinKey;
+	pinState currentState = checkPinState(currentPos, &pinKey);
 	
 	// If already in target state, do nothing
 	if (currentState == targetState) {
@@ -236,9 +275,9 @@ void ActivityJumper::changePinState(pinState targetState) {
 		return;
 	}
 	
-	// First, clean up current state if needed
+	// First, clean up current state if needed (the pin found at THIS position)
 	if (currentState != pinState::UNPINNED) {
-		cleanupCurrentPin(currentState);
+		cleanupCurrentPin(currentState, pinKey);
 	}
 	
 	// Then set to target state
@@ -256,6 +295,7 @@ void ActivityJumper::changePinState(pinState targetState) {
 				destinationArgMap_[historyStr] = currentPos;
 				jumpHistory_.append(historyStr);
 				currentPinState_ = pinState::PINNED;
+				qDebug() << "pin: added" << historyStr << "at" << positionString(currentPos);
 			}
 			break;
 		}
@@ -271,6 +311,7 @@ void ActivityJumper::changePinState(pinState targetState) {
 					jumpHistory_.append(historyStr);
 				}
 				currentPinState_ = pinState::PINNED_LOCK;
+				qDebug() << "pin: added" << historyStr << "at" << positionString(currentPos);
 			}
 			break;
 		}
@@ -282,9 +323,27 @@ void ActivityJumper::changePinState(pinState targetState) {
 			break;
 		}
 	}
+	emit pinStateChanged(static_cast<int>(checkPinState(currentPos, nullptr)));
 }
 
-void ActivityJumper::cleanupCurrentPin(pinState currentState) {
+void ActivityJumper::removeQuickPin(const QString &pinKey) {
+	if (pinKey.indexOf("quickpin") == -1) {
+		return;
+	}
+	jumpHistory_.removeAll(pinKey);
+	QMap<QString, Position>::iterator it = destinationArgMap_.find(pinKey);
+	if (it != destinationArgMap_.end()) {
+		qDebug() << "pin: consumed" << pinKey << "at" << positionString(it.value());
+		destinationArgMap_.erase(it);
+		quickPinCtr_.free(pinKey);
+	}
+}
+
+void ActivityJumper::cleanupCurrentPin(pinState currentState, const QString &pinKey) {
+	const QString currentPinKey_ = pinKey; // explicit key, not the shared member
+	if (destinationArgMap_.contains(currentPinKey_)) {
+		qDebug() << "pin: removed" << currentPinKey_ << "at" << positionString(destinationArgMap_[currentPinKey_]);
+	}
 	switch (currentState) {
 		case pinState::PINNED: {
 			// Remove quickpin
@@ -365,17 +424,27 @@ pinState ActivityJumper::checkCurrentPinState() {
 }
 
 pinState ActivityJumper::checkCurrentPinState(Position currentPos) {
-	QList<Position> valuesList = destinationArgMap_.values();
+	return checkPinState(currentPos, &currentPinKey_);
+}
 
+pinState ActivityJumper::checkPinState(Position pos, QString *pinKey) {
+	// A position can carry several entries (e.g. a destination key and a lock).
+	// Report the strongest: lock > quick pin > destination key.
+	QString lockKey, quickKey, destKey;
 	for (QMap<QString, Position>::iterator it = destinationArgMap_.begin(); it != destinationArgMap_.end(); ++it) {
-		if (it.value() == currentPos) {
-			currentPinKey_ = it.key();
-			if (currentPinKey_.indexOf("lockpin") != -1) return pinState::PINNED_LOCK;
-			else if (currentPinKey_.indexOf("quickpin") != -1) return pinState::PINNED;
-			else return pinState::PINNED_KEY;
+		if (it.value() == pos) {
+			if (it.key().indexOf("lockpin") != -1) { if (lockKey.isEmpty()) lockKey = it.key(); }
+			else if (it.key().indexOf("quickpin") != -1) { if (quickKey.isEmpty()) quickKey = it.key(); }
+			else if (destKey.isEmpty()) destKey = it.key();
 		}
 	}
-	return pinState::UNPINNED;
+	pinState state = pinState::UNPINNED;
+	QString key;
+	if (!lockKey.isEmpty()) { state = pinState::PINNED_LOCK; key = lockKey; }
+	else if (!quickKey.isEmpty()) { state = pinState::PINNED; key = quickKey; }
+	else if (!destKey.isEmpty()) { state = pinState::PINNED_KEY; key = destKey; }
+	if (pinKey) *pinKey = key;
+	return state;
 }
 
 int PinCtr::registerNext() {
