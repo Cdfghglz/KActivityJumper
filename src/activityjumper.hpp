@@ -60,6 +60,7 @@ private:
 	QDBusInterface *activityManItf_ = nullptr;
 	QDBusInterface *kwinItf_ = nullptr;
 	static bool isValid(const Position &pos);
+	static bool isDestinationKey(const QString &key);
 	QMap<QString, QString> activityCodeMap_;
 	QMap<QString, QString> activityNameMap_;
 	void loadActivityMaps();

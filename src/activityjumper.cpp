@@ -30,6 +30,10 @@ ActivityJumper::ActivityJumper(QObject *parent)
 				 "CurrentActivityChanged", this, SLOT(onDesktopChanged()));
 }
 
+bool ActivityJumper::isDestinationKey(const QString &key) {
+	return key.indexOf("quickpin") == -1 && key.indexOf("lockpin") == -1;
+}
+
 bool ActivityJumper::isValid(const Position &pos) {
 	return !pos.activityName.isEmpty() && pos.desktopNr > 0;
 }
@@ -167,10 +171,14 @@ void ActivityJumper::jumpTo(QString destinArg) {
 		return;
 	}
 	if (!(currentPos == destinationArgMap_[destinArg])) {
-		
+		// Jumps inside one activity are "moving around", not "jumping away": they
+		// must not stack up history, so Meta+Space from anywhere in that activity
+		// returns to where we came from (see jumpBack). Only a jump that leaves the
+		// activity auto-pins the spot we leave.
+		const bool sameActivity = currentPos.activityName == destinationArgMap_[destinArg].activityName;
+
 		// Auto-pin current position if it's unpinned before jumping away
-		pinState currentState = checkCurrentPinState(currentPos);
-		if (currentState == pinState::UNPINNED) {
+		if (!sameActivity && checkCurrentPinState(currentPos) == pinState::UNPINNED) {
 			changePinState(pinState::PINNED);
 		}
 
@@ -194,6 +202,14 @@ void ActivityJumper::jumpTo(QString destinArg) {
 		if (jumpHistory_.isEmpty()) {
 			changePinState();
 			jumpHistory_.append(destinArg);
+		} else if (sameActivity && isDestinationKey(jumpHistory_.last()) &&
+				   destinationArgMap_[jumpHistory_.last()].activityName == currentPos.activityName) {
+			// Replace the previous destination of this activity instead of stacking it.
+			// Pins (manual Meta+P, locks) are never replaced.
+			jumpHistory_.removeLast();
+			if (jumpHistory_.isEmpty() || jumpHistory_.last() != destinArg) {
+				jumpHistory_.append(destinArg);
+			}
 		} else if (jumpHistory_.last() != destinArg) {
 			jumpHistory_.append(destinArg);
 		}
@@ -225,6 +241,36 @@ void ActivityJumper::jumpBack() {
 			goToDestination(destinationArgMap_[destKey]);
 
 		} else {
+			// Go back to the most recent entry in ANOTHER activity: everything above
+			// it was moving around inside the activity we are in now, so drop it
+			// (consuming its quick pins). Locks at the bottom are never dropped.
+			int target = -1;
+			for (int i = jumpHistory_.size() - 1; i >= 0; --i) {
+				if (destinationArgMap_.value(jumpHistory_[i]).activityName != currentPos.activityName) {
+					target = i;
+					break;
+				}
+			}
+			if (target != -1) {
+				const int keep = qMax(target + 1, lockPinCtr_.pinCt());
+				while (jumpHistory_.size() > keep) {
+					QString takenKey = jumpHistory_.takeLast();
+					if (takenKey.indexOf("quickpin") != -1) {
+						removeQuickPin(takenKey);
+					}
+				}
+				QString destKey = jumpHistory_[target];
+				qDebug() << "jumpBack: leaving" << currentPos.activityName << "to" << destKey
+						 << "at" << positionString(destinationArgMap_[destKey]);
+				goToDestination(destinationArgMap_[destKey]);
+				if (destKey.indexOf("quickpin") != -1) {
+					removeQuickPin(destKey);
+				}
+				emit pinStateChanged(static_cast<int>(checkCurrentPinState()));
+				return;
+			}
+
+			// Nothing outside this activity: step back within it as before.
 			QString destKey = jumpHistory_.last();
 			Position prevPos = destinationArgMap_[destKey];
 
